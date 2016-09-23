@@ -3,14 +3,16 @@
 """Wikipedia interface.
 
 Usage:
-  wikipedia.py category_graph | count_category_pages
-  wikipedia.py count_pages | count_pages_per_user
-  wikipedia.py article_link_graph [-v]
-  wikipedia.py iter_pages | iter_article_words
+  wikipedia.py category-graph | count-category-pages
+  wikipedia.py count-pages | count-pages-per-user
+  wikipedia.py article-link-graph [options]
+  wikipedia.py iter-pages | iter-article-words [options]
+  wikipedia.py doc-term-matrix [options]
 
 Options:
-  -h --help     Help
-  -v --verbose  Verbose messages
+  -h --help            Help
+  -v --verbose         Verbose messages
+  --max-n-pages=<int>  Maximum number of pages to iterate over
 
 """
 
@@ -27,6 +29,8 @@ import json
 from lxml import etree
 
 import mwparserfromhell
+
+from scipy.sparse import lil_matrix
 
 
 BZ2_XML_DUMP_FILENAME = ('/home/faan/data/wikipedia/'
@@ -145,11 +149,6 @@ class XmlDumpFile(object):
         """
         self.filename = filename
 
-        if filename.endswith('.bz2'):
-            self.file = BZ2File(filename)
-        else:
-            self.file = file(filename)
-
         self.word_pattern = re.compile(
             r"""{{.+?}}|
             <!--.+?-->|
@@ -186,6 +185,11 @@ class XmlDumpFile(object):
             XML element
 
         """
+        if self.filename.endswith('.bz2'):
+            self.file = BZ2File(self.filename)
+        else:
+            self.file = file(self.filename)
+
         with self.file as f:
             for event, element in etree.iterparse(f, events=events):
                 yield event, element
@@ -246,20 +250,34 @@ class XmlDumpFile(object):
                 counts[page['ip']] += 1
         return counts
 
-    def iter_article_pages(self):
+    def iter_article_pages(self, max_n_pages=None):
         """Iterate over article pages.
+
+        Parameters
+        ----------
+        max_n_pages : int or None
+            Maximum number of pages to return.
 
         Yields
         ------
         page : dict
 
         """
+        n = 0
         for page in self.iter_pages():
             if page['ns'] == '0':
+                n += 1
                 yield page
+                if max_n_pages is not None and n >= max_n_pages:
+                    break
 
-    def iter_article_words(self):
+    def iter_article_words(self, max_n_pages=None):
         """Iterate over articles returning word list.
+
+        Parameters
+        ----------
+        max_n_pages : int or None
+            Maximum number of pages to iterate over.
 
         Yields
         ------
@@ -269,7 +287,7 @@ class XmlDumpFile(object):
             List of words
 
         """
-        for page in self.iter_article_pages():
+        for page in self.iter_article_pages(max_n_pages=max_n_pages):
             words = self.word_pattern.findall(page['text'])
             words = [word.lower() for word in words if word]
             yield page['title'], words
@@ -348,6 +366,46 @@ class XmlDumpFile(object):
             graph[category] = categories
         return graph
 
+    def doc_term_matrix(self, max_n_pages=None, verbose=False):
+        """Return doc-term matrix.
+
+        Parameters
+        ----------
+        max_n_pages : int or None
+            Maximum number of Wikipedia articles to iterate over.
+        verbose : bool
+            Display message during processing.
+
+        """
+        # Identify terms
+        n_pages = 0
+        all_terms = []
+        for title, words in self.iter_article_words(max_n_pages=max_n_pages):
+            n_pages += 1
+            all_terms.extend(words)
+            if verbose and not n_pages % 100:
+                print(u"Identified terms from article {}".format(n_pages))
+        terms = list(set(all_terms))
+        n_terms = len(terms)
+
+        if verbose:
+            print("Constructing sparse matrix of size {}x{}".format(
+                n_pages, n_terms))
+        matrix = lil_matrix((n_pages, n_terms))
+
+        # Count terms wrt. articles
+        rows = []
+        columns = dict(zip(terms, range(len(terms))))
+        for n, (title, words) in enumerate(self.iter_article_words(
+                max_n_pages=max_n_pages)):
+            rows.append(title)
+            for word in words:
+                matrix[n, columns[word]] += 1
+            if verbose and not n % 100:
+                print(u"Sat counts in matrix from article {}".format(n))
+
+        return matrix, rows, terms
+
 
 def main():
     """Handle command-line interface."""
@@ -357,35 +415,44 @@ def main():
 
     dump_file = XmlDumpFile()
 
-    if arguments['iter_pages']:
+    if arguments['iter-pages']:
         for page in dump_file.iter_pages():
             print(json.dumps(page))
 
-    elif arguments['count_pages']:
+    elif arguments['count-pages']:
         count = dump_file.count_pages()
         print(count)
 
-    elif arguments['count_pages_per_user']:
+    elif arguments['count-pages-per-user']:
         counts = dump_file.count_pages_per_user().most_common(100)
         for n, (user, count) in enumerate(counts, 1):
             print(u"{:4} {:6} {}".format(n, count, user))
 
-    elif arguments['article_link_graph']:
+    elif arguments['article-link-graph']:
         graph = dump_file.article_link_graph(
             verbose=arguments['--verbose'])
         print(graph)
 
-    elif arguments['category_graph']:
+    elif arguments['category-graph']:
         graph = dump_file.category_graph()
         print(graph)
 
-    elif arguments['count_category_pages']:
+    elif arguments['count-category-pages']:
         count = dump_file.count_category_pages()
         print(count)
 
-    elif arguments['iter_article_words']:
-        for title, words in dump_file.iter_article_words():
+    elif arguments['iter-article-words']:
+        for title, words in dump_file.iter_article_words(
+                max_n_pages=int(arguments['--max-n-pages'])):
             print(json.dumps([title, words]))
+
+    elif arguments['doc-term-matrix']:
+        matrix, rows, columns = dump_file.doc_term_matrix(
+            max_n_pages=int(arguments['--max-n-pages']),
+            verbose=arguments['--verbose'])
+        print(matrix)
+        # df = DataFrame(matrix, index=rows, columns=columns)
+        # print(df.to_csv(encoding='utf-8'))
 
 
 if __name__ == '__main__':
