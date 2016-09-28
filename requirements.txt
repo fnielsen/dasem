@@ -1,3 +1,7 @@
 docopt
+jsonpickle
 lxml
 mwparserfromhell
+numpy
+scikit-learn
+tqdm
