@@ -3,16 +3,19 @@
 """Wikipedia interface.
 
 Usage:
-  wikipedia.py category-graph | count-category-pages
-  wikipedia.py count-pages | count-pages-per-user
-  wikipedia.py article-link-graph [options]
-  wikipedia.py iter-pages | iter-article-words [options]
-  wikipedia.py doc-term-matrix [options]
+  dasem.wikipedia category-graph | count-category-pages
+  dasem.wikipedia count-pages | count-pages-per-user
+  dasem.wikipedia article-link-graph [options]
+  dasem.wikipedia iter-pages | iter-article-words [options]
+  dasem.wikipedia doc-term-matrix [options]
+  dasem.wikipedia save-tfidf-vectorizer [options]
 
 Options:
   -h --help            Help
   -v --verbose         Verbose messages
+  --display
   --max-n-pages=<int>  Maximum number of pages to iterate over
+  --filename=<str>     Filename
 
 """
 
@@ -20,21 +23,35 @@ from __future__ import division, print_function
 
 from bz2 import BZ2File
 
+import codecs
+
 from collections import Counter
 
 import re
 
 import json
 
+import jsonpickle
+import jsonpickle.ext.numpy as jsonpickle_numpy
+jsonpickle_numpy.register_handlers()
+
 from lxml import etree
 
 import mwparserfromhell
 
+from numpy import corrcoef
+
 from scipy.sparse import lil_matrix
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+from tqdm import tqdm
 
 
 BZ2_XML_DUMP_FILENAME = ('/home/faan/data/wikipedia/'
                          'dawiki-20160901-pages-articles.xml.bz2')
+
+TFIDF_VECTORIZER_FILENAME = 'tfidfvectorizer.json'
 
 
 def is_article_link(wikilink):
@@ -250,7 +267,7 @@ class XmlDumpFile(object):
                 counts[page['ip']] += 1
         return counts
 
-    def iter_article_pages(self, max_n_pages=None):
+    def iter_article_pages(self, max_n_pages=None, display=False):
         """Iterate over article pages.
 
         Parameters
@@ -264,7 +281,7 @@ class XmlDumpFile(object):
 
         """
         n = 0
-        for page in self.iter_pages():
+        for page in tqdm(self.iter_pages(), disable=not display):
             if page['ns'] == '0':
                 n += 1
                 yield page
@@ -412,7 +429,13 @@ def main():
     from docopt import docopt
 
     arguments = docopt(__doc__)
-
+    display = arguments['--display']
+    if arguments['--max-n-pages'] is None:
+        max_n_pages = None
+    else:
+        max_n_pages = int(arguments['--max-n-pages'])
+    verbose = arguments['--verbose']
+    
     dump_file = XmlDumpFile()
 
     if arguments['iter-pages']:
@@ -454,6 +477,33 @@ def main():
         # df = DataFrame(matrix, index=rows, columns=columns)
         # print(df.to_csv(encoding='utf-8'))
 
+    elif arguments['save-tfidf-vectorizer']:
+        if arguments['--filename']:
+            filename = arguments['--filename']
+        else:
+            filename = TFIDF_VECTORIZER_FILENAME
 
+        texts = (page['text'] for page in dump_file.iter_article_pages(
+            max_n_pages=max_n_pages,
+            display=display))
+
+        # Cannot unzip the iterator
+        titles = [page['title']
+                  for page in dump_file.iter_article_pages(
+                          max_n_pages=max_n_pages,
+                          display=display)]
+
+        if display:
+            tqdm.write('TFIDF vectorizing')
+        transformer = TfidfVectorizer()
+        transformer.fit(texts)
+        transformer.rows = titles
+
+        if display:
+            tqdm.write('Writing tfidf vectorizer to {}'.format(filename))
+        with codecs.open(filename, 'w', encoding='utf-8') as f:
+            f.write(jsonpickle.encode(transformer))
+
+        
 if __name__ == '__main__':
     main()
