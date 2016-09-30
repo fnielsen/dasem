@@ -41,11 +41,32 @@ class Semantic(object):
 
     """
 
-    def __init__(self, max_n_pages=None, display=False):
-        self.setup_wikipedia_semantics(
-            max_n_pages=max_n_pages, display=display)
+    def __init__(
+            self, stop_words=None, norm='l2', use_idf=True,
+            sublinear_tf=False, max_n_pages=None, display=False):
+        """Setup model.
 
-    def setup_wikipedia_semantics(self, max_n_pages=None, display=False):
+        Several of the parameters are piped further on to sklearns
+        TfidfVectorizer. 
+
+        Parameters
+        ----------
+        stop_words : list of str or None, optional
+            List of stop words.
+        norm : 'l1', 'l2' or None, optional
+            Norm use to normalize term vectors of tfidf vectorizer.
+        use_idf : bool, optional
+            Enable inverse-document-frequency reweighting.
+
+        """
+        self.setup_wikipedia_semantics(
+            stop_words=None, norm=norm, use_idf=use_idf,
+            sublinear_tf=sublinear_tf, max_n_pages=max_n_pages,
+            display=display)
+
+    def setup_wikipedia_semantics(
+            self, stop_words=None, norm='l2', use_idf=True, sublinear_tf=False,
+            max_n_pages=None, display=False):
         self._dump_file = XmlDumpFile()
 
         self._wikipedia_titles = [
@@ -60,7 +81,9 @@ class Semantic(object):
 
         if display:
             tqdm.write('TFIDF vectorizing')
-        self._wikipedia_transformer = TfidfVectorizer()
+        self._wikipedia_transformer = TfidfVectorizer(
+            stop_words=None, norm=norm, use_idf=use_idf,
+            sublinear_tf=sublinear_tf)
         self._wikipedia_Y = self._wikipedia_transformer.fit_transform(texts)
 
     def relatedness(self, phrases):
