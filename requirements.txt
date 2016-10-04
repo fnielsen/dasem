@@ -1,7 +1,9 @@
 docopt
+gensim
 jsonpickle
 lxml
 mwparserfromhell
+nltk
 numpy
 scikit-learn
 tqdm
