@@ -27,19 +27,20 @@ import codecs
 
 from collections import Counter
 
+import os.path
+
 import re
 
 import json
 
+import gensim
+
 import jsonpickle
 import jsonpickle.ext.numpy as jsonpickle_numpy
-jsonpickle_numpy.register_handlers()
 
 from lxml import etree
 
 import mwparserfromhell
-
-from numpy import corrcoef
 
 from scipy.sparse import lil_matrix
 
@@ -47,11 +48,19 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from tqdm import tqdm
 
+from .config import data_directory
+from .text import sentence_tokenize, word_tokenize
+
+
+jsonpickle_numpy.register_handlers()
+
 
 BZ2_XML_DUMP_FILENAME = ('/home/faan/data/wikipedia/'
                          'dawiki-20160901-pages-articles.xml.bz2')
 
-TFIDF_VECTORIZER_FILENAME = 'tfidfvectorizer.json'
+TFIDF_VECTORIZER_FILENAME = 'wikipedia-tfidfvectorizer.json'
+
+WORD2VEC_FILENAME = 'wikipedia-word2vec.pkl.gz'
 
 
 def is_article_link(wikilink):
@@ -288,6 +297,70 @@ class XmlDumpFile(object):
                 if max_n_pages is not None and n >= max_n_pages:
                     break
 
+    def iter_article_sentences(self, max_n_pages=None, display=False):
+        """Iterate over article sentences.
+
+        Parameters
+        ----------
+        max_n_pages : int or None, optional
+            Maximum number of pages to return.
+        display : bool, optional
+            Print iteration feedback information
+
+        Yields
+        ------
+        sentences : str
+            Sentences as strings.
+
+        """
+        n = 0
+        for article in tqdm(self.iter_article_pages(
+                max_n_pages=max_n_pages, display=display),
+                         disable=not display):
+            n += 1
+            text = mwparserfromhell.parse(article['text'])
+            sentences = sentence_tokenize(text.strip_code())
+            for sentence in sentences:
+                yield sentence
+            if max_n_pages is not None and n >= max_n_pages:
+                break
+
+    def iter_article_sentence_words(
+            self, lower=True, max_n_pages=None, display=False):
+        """Iterate over article sentences.
+
+        Parameters
+        ----------
+        lower : bool, optional
+            Lower case words
+        max_n_pages : int or None, optional
+            Maximum number of pages to return.
+        display : bool, optional
+            Print iteration feedback information
+
+        Yields
+        ------
+        sentences : list of str
+            Sentences as list of words represented as strings.
+
+        """
+        n = 0
+        for article in tqdm(self.iter_article_pages(
+                max_n_pages=max_n_pages, display=display),
+                         disable=not display):
+            n += 1
+            text = mwparserfromhell.parse(article['text'])
+            sentences = sentence_tokenize(text.strip_code())
+            for sentence in sentences:
+                tokens = word_tokenize(sentence)
+                if lower:
+                    yield [token.lower() for token in tokens]
+                else:
+                    yield tokens
+
+            if max_n_pages is not None and n >= max_n_pages:
+                break
+
     def iter_article_words(self, max_n_pages=None):
         """Iterate over articles returning word list.
 
@@ -424,6 +497,138 @@ class XmlDumpFile(object):
         return matrix, rows, terms
 
 
+class Word2Vec(object):
+    """Gensim Word2vec for Danish Wikipedia corpus."""
+
+    class Sentences():
+        """Sentence iterable.
+
+        References
+        ----------
+        https://stackoverflow.com/questions/34166369
+
+        """
+        def __init__(self, lower=True, max_n_pages=None, display=False):
+            self.lower = lower
+            self.max_n_pages = max_n_pages
+            self.display = display
+
+        def __iter__(self):
+            """Restart and return iterable."""
+            dump_file = XmlDumpFile()
+            sentences = dump_file.iter_article_sentence_words(
+                lower=self.lower,
+                max_n_pages=self.max_n_pages,
+                display=self.display)
+            return sentences
+
+    def __init__(self, autosetup=True):
+        self.model = None
+        if autosetup:
+            try:
+                self.load()
+            except:
+                self.train()
+                self.save()
+
+    def full_filename(self, filename):
+        """Return filename with full filename path."""
+        if os.path.sep in filename:
+            return filename
+        else:
+            return os.path.join(data_directory(), 'models', filename)
+
+    def load(self, filename=WORD2VEC_FILENAME):
+        """Load model from pickle file.
+
+        This function is unsafe. Do not load unsafe files.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of pickle file.
+
+        """
+        full_filename = self.full_filename(filename)
+        self.model = gensim.models.Word2Vec.load(full_filename)
+
+    def save(self, filename=WORD2VEC_FILENAME):
+        """Save model to pickle file.
+
+        The Gensim load file is used which can also compress the file.
+
+        Parameters
+        ----------
+        filename : str, optional
+            Filename.
+
+        """
+        full_filename = self.full_filename(filename)
+        self.model.save(full_filename)
+
+    def train(self, size=100, window=5, min_count=5, workers=4,
+              max_n_pages=None, display=False):
+        """Train Gensim Word2Vec model.
+
+        Parameters
+        ----------
+        size : int, optional
+            Dimension of the word2vec space.
+
+        """
+        sentences = Word2Vec.Sentences(
+            max_n_pages=max_n_pages, display=display)
+        self.model = gensim.models.Word2Vec(
+            sentences, size=size, window=window, min_count=min_count,
+            workers=workers)
+
+    def doesnt_match(self, words):
+        """Return odd word of list.
+
+        Parameters
+        ----------
+        words : list of str
+            List of words represented as strings.
+
+        Returns
+        -------
+        word : str
+            Outlier word.
+
+        Examples
+        --------
+        >>> w2v = Word2Vec()
+        >>> w2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
+        'stol'
+
+        """
+        return self.model.doesnt_match(words)
+
+    def most_similar(self, positive=[], negative=[], topn=10,
+                     restrict_vocab=None, indexer=None):
+        """Return most similar words."""
+        return self.model.most_similar(
+            positive, negative, topn, restrict_vocab, indexer)
+
+    def similarity(self, word1, word2):
+        """Return value for similarity between two words.
+
+        Parameters
+        ----------
+        word1 : str
+            First word to be compared
+        word2 : str
+            Second word.
+
+        Returns
+        -------
+        value : float
+            Similarity as a float value between 0 and 1.
+
+        """
+        return self.model.similarity(word1, word2)
+
+
 def main():
     """Handle command-line interface."""
     from docopt import docopt
@@ -435,7 +640,7 @@ def main():
     else:
         max_n_pages = int(arguments['--max-n-pages'])
     verbose = arguments['--verbose']
-    
+
     dump_file = XmlDumpFile()
 
     if arguments['iter-pages']:
@@ -453,7 +658,7 @@ def main():
 
     elif arguments['article-link-graph']:
         graph = dump_file.article_link_graph(
-            verbose=arguments['--verbose'])
+            verbose=verbose)
         print(graph)
 
     elif arguments['category-graph']:
@@ -504,6 +709,6 @@ def main():
         with codecs.open(filename, 'w', encoding='utf-8') as f:
             f.write(jsonpickle.encode(transformer))
 
-        
+
 if __name__ == '__main__':
     main()
