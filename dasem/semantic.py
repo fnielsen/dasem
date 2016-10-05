@@ -47,7 +47,7 @@ class Semantic(object):
         """Setup model.
 
         Several of the parameters are piped further on to sklearns
-        TfidfVectorizer. 
+        TfidfVectorizer.
 
         Parameters
         ----------
