@@ -1,7 +1,8 @@
 """text."""
 
 
-from nltk import sent_tokenize, word_tokenize
+from nltk import sent_tokenize
+from nltk import word_tokenize as nltk_word_tokenize
 
 
 def sentence_tokenize(text):
@@ -32,4 +33,4 @@ def sentence_tokenize(text):
 
 def word_tokenize(sentence):
     """Tokenize a Danish sentence into words."""
-    return word_tokenize(sentence)
+    return nltk_word_tokenize(sentence)
