@@ -54,7 +54,7 @@ def fix_author(author):
 
     """
     author_parts = author.split(', ')
-    if author_parts == 2:
+    if len(author_parts) == 2:
         fixed_author = author_parts[1] + ' ' + author_parts[0]
     else:
         fixed_author = author
@@ -82,13 +82,16 @@ class Runeberg(object):
         with open(filename, 'w') as f:
             f.write(response.content)
 
-    def catalogue(self):
+    def catalogue(self, fix_author=True):
         """Retrieve and parse Runeberg catalogue.
 
         Returns
         -------
         books : pandas.DataFrame
             Dataframe with book information.
+        fix_author : bool, optional
+            Determine if author names should be rearranged in firstname-surname
+            order [default: True]
 
         """
         response = requests.get(CATALOGUE_URL)
@@ -107,6 +110,9 @@ class Runeberg(object):
                                             elements[6], flags=flags)[0]
             except:
                 author_id, author = '', ''
+            if fix_author:
+                # fix_author name collision. TODO
+                author = globals()['fix_author'](author)
             book = {
                 'type': findall(r'alt="(.*?)">', elements[0], flags=flags)[0],
                 'book_id': book_id,
