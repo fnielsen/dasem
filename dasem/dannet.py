@@ -7,12 +7,16 @@ Usage:
 Description
 -----------
 words.csv:
-   3-columns: (word_id, word, word_class), e.g., (50001462, druemost, Noun)
-   The id is found in the wordsenses.csv
+   3-columns: (id, form, pos), e.g., (50001462, druemost, Noun)
+   The id is found in the wordsenses.csv. It is for the lexical entry
 
 wordsenses.csv:
    4-columns (wordsense_id, word_id, synset_id, ?), e.g.,
    (22005172, 50001462, 66967, )
+
+
+For instance, relations.csv describes 2355 (gruppe_1; samling_3) as being a
+hyponym of 20633 (DN:TOP) and synonym of WordNet's ENG20-08119921-n.
 
 
 """
@@ -39,13 +43,26 @@ DANNET_FILENAME = 'DanNet-2.2_csv.zip'
 class Dannet(object):
 
     def full_zip_filename(self, filename=DANNET_FILENAME):
+        """Prepend data directory path to filename.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of local Dannet file.
+
+        Returns
+        -------
+        full_filename : str
+            Filename with full directory path information.
+
+        """
         if sep in filename:
             return filename
         else:
             return join(data_directory(), 'dannet', filename)
 
     def read_zipped_csv_file(self, filename, zip_filename=DANNET_FILENAME):
-        """Read a zipped csv file.
+        """Read a zipped csv DanNet file.
 
         The csv file is read with the 'latin_1' encoding.
 
@@ -82,11 +99,25 @@ class Dannet(object):
                     rows.append(row)
             df = DataFrame(rows)
 
+        # Drop last column which always seems to be superfluous
+        df = df.iloc[:, :-1]
+
         return df
 
     def read_relations(self, zip_filename=DANNET_FILENAME):
+        """Read relations CSV file.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            Dataframe with columns synset_id, name, name2, value, taxonomic, 
+            inheritance_comment.
+
+        """
         df = self.read_zipped_csv_file(
             'relations.csv', zip_filename=zip_filename)
+        df.columns = ['synset_id', 'name', 'name2', 'value', 'taxonomic',
+                      'inheritance_comment']
         return df
 
     def read_synset_attributes(self, zip_filename=DANNET_FILENAME):
@@ -95,17 +126,45 @@ class Dannet(object):
         return df
 
     def read_synsets(self, zip_filename=DANNET_FILENAME):
+        """Read synsets CSV file.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            Dataframe with columns id, label, gloss, ontological_type.
+
+        """
         df = self.read_zipped_csv_file(
             'synsets.csv', zip_filename=zip_filename)
+        df.columns = ['id', 'label', 'gloss', 'ontological_type']
         return df
 
     def read_words(self, zip_filename=DANNET_FILENAME):
+        """Read words from CSV file.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            Dataframe with id, form and pos columns.
+
+        """
         df = self.read_zipped_csv_file('words.csv', zip_filename=zip_filename)
+        df.columns = ['id', 'form', 'pos']
         return df
 
     def read_wordsenses(self, zip_filename=DANNET_FILENAME):
+        """Read wordsenses data file.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+           Dataframe with the columns wordsense_id, word_id, synset_id and
+           register.
+
+        """
         df = self.read_zipped_csv_file(
             'wordsenses.csv', zip_filename=zip_filename)
+        df.columns = ['wordsense_id', 'word_id', 'synset_id', 'register']
         return df
 
 
@@ -134,7 +193,7 @@ def main():
         dataset = dannet.read_wordsenses()
     else:
         raise ValueError('Wrong <dataset>')
-    print(dataset.to_csv(encoding=encoding))
+    print(dataset.to_csv(encoding=encoding, index=False))
 
 
 if __name__ == '__main__':
