@@ -67,6 +67,7 @@ class Semantic(object):
     def setup_wikipedia_semantics(
             self, stop_words=None, norm='l2', use_idf=True, sublinear_tf=False,
             max_n_pages=None, display=False):
+        """Setup wikipedia semantic model."""
         self._dump_file = XmlDumpFile()
 
         self._wikipedia_titles = [
@@ -156,6 +157,7 @@ class Semantic(object):
 
 
 def main():
+    """Handle command-line interface."""
     reload(sys)
     sys.setdefaultencoding(sys.stdout.encoding)
 
