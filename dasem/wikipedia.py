@@ -508,7 +508,9 @@ class Word2Vec(object):
         https://stackoverflow.com/questions/34166369
 
         """
+        
         def __init__(self, lower=True, max_n_pages=None, display=False):
+            """Setup parameters."""
             self.lower = lower
             self.max_n_pages = max_n_pages
             self.display = display
@@ -523,6 +525,14 @@ class Word2Vec(object):
             return sentences
 
     def __init__(self, autosetup=True):
+        """Setup model.
+
+        Parameters
+        ----------
+        autosetup : bool, optional
+            Determines whether the Word2Vec model should be autoloaded.
+
+        """
         self.model = None
         if autosetup:
             try:
