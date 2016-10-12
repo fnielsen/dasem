@@ -1,4 +1,4 @@
-"""Matrix.
+r"""Matrix.
 
 Usage:
    dasem.matrix save-wikipedia-doc-term-matrix [options] <filename>
@@ -17,7 +17,6 @@ Examples:
    python -m dasem.matrix save-wikipedia-doc-term-matrix \
        --max-n-pages=10 tmp.mtx
 
-
 """
 
 from math import ceil, sqrt
@@ -35,6 +34,7 @@ from .wikipedia import XmlDumpFile
 
 
 class Matrix(object):
+    """Matrix."""
 
     def __init__(self, matrix, rows=None, columns=None):
         """Setup matrix values and row and column annotation.
@@ -61,6 +61,7 @@ class Matrix(object):
 
     @property
     def shape(self):
+        """Return shape of matrix."""
         return self.matrix.shape
 
     def to_csr(self, copy=False):
@@ -129,7 +130,8 @@ class Matrix(object):
                    rows=components, columns=self.columns)
         return W, H
 
-    def tdidf(self, copy=False):
+    def tfidf(self, copy=False):
+        """Return tfidf-transformed matrix."""
         transformer = TfidfTransformer()
         if copy:
             matrix = Matrix(transformer.fit_transform(self.matrix),
