@@ -1,15 +1,13 @@
-"""
-Usage:
-   dasem <query>
+"""dasem.
 
-Options:
-  --max-n-pages=<int>  Maximum number of pages
-  -v --verbose         Verbose debug messaging
+Usage:
+   dasem
 
 """
 
 
 def main():
+    """Handle command-line interface."""
     raise NotImplementedError
 
 
