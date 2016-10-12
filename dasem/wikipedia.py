@@ -508,7 +508,7 @@ class Word2Vec(object):
         https://stackoverflow.com/questions/34166369
 
         """
-        
+
         def __init__(self, lower=True, max_n_pages=None, display=False):
             """Setup parameters."""
             self.lower = lower
