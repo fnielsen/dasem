@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+
+<h1>Dasem</h1>
+
+<form>
+  <input value="{{ q }}" name=q>
+  <input type=submit value="search">
+</form>
+
+<h2>Results</h2>
+
+<h3>DanNet synsets</h3>
+{{ dannet_synset_table | safe }}
+
+<h3>DanNet relations</h3>
+{{ dannet_relations_table | safe }}
+
+{% endblock %}
+
+  
