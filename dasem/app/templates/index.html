@@ -11,11 +11,20 @@
 
 <h2>Results</h2>
 
+<h3>Related Wikipedia titles</h3>
+
+{% for article in semantic_related %}
+<a href="https://da.wikipedia.org/wiki/{{ article }}">{{ article }}</a>
+|
+{% endfor %}
+
+
 <h3>DanNet synsets</h3>
 {{ dannet_synset_table | safe }}
 
 <h3>DanNet relations</h3>
 {{ dannet_relations_table | safe }}
+
 
 {% endblock %}
 
