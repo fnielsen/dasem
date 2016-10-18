@@ -43,12 +43,15 @@ def index():
         #     query, data={'word': first_word})
         
         query = DANNET_SYNSET_QUERY.format(word=first_word)
-        dannet_synsets_table = app._dasem_dannet.db.query(query).to_html()
+        dannet_synsets_table = app.dasem_dannet.db.query(query).to_html()
 
         query = DANNET_RELATIONS_QUERY.format(word=first_word)
-        dannet_relations_table = app._dasem_dannet.db.query(query).to_html()
+        dannet_relations_table = app.dasem_dannet.db.query(query).to_html()
+
+    related = app.dasem_semantic.related(q)
         
     return render_template(
         'index.html', q=q,
         dannet_synset_table=dannet_synsets_table,
-        dannet_relations_table=dannet_relations_table)
+        dannet_relations_table=dannet_relations_table,
+        semantic_related=related)
