@@ -1,5 +1,7 @@
 db.py
 docopt
+flask
+Flask-Bootstrap
 gensim
 jsonpickle
 lxml
