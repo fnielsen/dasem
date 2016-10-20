@@ -48,7 +48,7 @@ def index():
         query = DANNET_RELATIONS_QUERY.format(word=first_word)
         dannet_relations_table = app.dasem_dannet.db.query(query).to_html()
 
-    related = app.dasem_semantic.related(q)
+    related = app.dasem_wikipedia_esa.related(q)
         
     return render_template(
         'index.html', q=q,
