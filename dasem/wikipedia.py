@@ -823,6 +823,9 @@ class Word2Vec(object):
     def doesnt_match(self, words):
         """Return odd word of list.
 
+        This method forward the matching to the `doesnt_match` method in the
+        Word2Vec class of Gensim.
+
         Parameters
         ----------
         words : list of str
@@ -844,7 +847,34 @@ class Word2Vec(object):
 
     def most_similar(self, positive=[], negative=[], topn=10,
                      restrict_vocab=None, indexer=None):
-        """Return most similar words."""
+        """Return most similar words.
+
+        This method will forward the similarity search to the `most_similar`
+        method in the Word2Vec class in Gensim. The input parameters and
+        returned result are the same.
+
+        Parameters
+        ----------
+        positive : list of str
+            List of strings with words to include for similarity search.
+        negative : list of str
+            List of strings with words to discount.
+        topn : int
+            Number of words to return
+
+        Returns
+        -------
+        words : list of tuples
+            List of 2-tuples with word and similarity.
+
+        Examples
+        --------
+        >>> w2v = Word2Vec()
+        >>> words = w2v.most_similar('studieretning')
+        >>> len(words)
+        10
+
+        """
         return self.model.most_similar(
             positive, negative, topn, restrict_vocab, indexer)
 
