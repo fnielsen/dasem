@@ -87,10 +87,10 @@ class Dannet(object):
     +--------+---------+--------------+----------------+
 
     >>> query = '''  # From README
-    ... SELECT w.form, ws.register, s.id, s.gloss, s.ontological_type
+    ... SELECT w.form, ws.register, s.synset_id, s.gloss, s.ontological_type
     ... FROM synsets s, wordsenses ws, words w
-    ... WHERE s.id = ws.synset_id
-    ...   AND ws.word_id = w.id
+    ... WHERE s.synset_id = ws.synset_id
+    ...   AND ws.word_id = w.word_id
     ...   AND w.form = 'spand';'''
     >>> 'bil' in dannet.db.query(query).gloss[0]
     True
@@ -227,7 +227,7 @@ class Dannet(object):
         """
         df = self.read_zipped_csv_file(
             'synsets.csv', zip_filename=zip_filename)
-        df.columns = ['id', 'label', 'gloss', 'ontological_type']
+        df.columns = ['synset_id', 'label', 'gloss', 'ontological_type']
         return df
 
     def read_words(self, zip_filename=DANNET_FILENAME):
@@ -240,7 +240,7 @@ class Dannet(object):
 
         """
         df = self.read_zipped_csv_file('words.csv', zip_filename=zip_filename)
-        df.columns = ['id', 'form', 'pos']
+        df.columns = ['word_id', 'form', 'pos']
         return df
 
     def read_wordsenses(self, zip_filename=DANNET_FILENAME):
