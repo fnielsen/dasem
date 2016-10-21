@@ -2,6 +2,23 @@
 
 {% block title %}Dasem{% endblock %}
 
+{% block scripts %}
+{{super()}}
+
+<link rel="stylesheet" type="text/css"
+      href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">
+<script type="text/javascript" charset="utf8"
+      src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+<script type="text/javascript" charset="utf8">
+$(document).ready( function () {
+    $('.dataframe').DataTable({"paging": false});
+} );
+</script>
+
+{% endblock %}
+
+
 {% block content %}
   <div class="container">
     {% block page_content %}{% endblock %}
