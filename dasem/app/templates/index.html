@@ -11,20 +11,32 @@
 
 <h2>Results</h2>
 
-<h3>Related Wikipedia titles</h3>
 
-{% for article in semantic_related %}
-<a href="https://da.wikipedia.org/wiki/{{ article }}">{{ article }}</a>
-|
-{% endfor %}
+<div class="container" title="Most similar words according to Word2Vec on Danish Wikipedia">
+  <h3>Similar words</h3>
 
+  {% for word, similarity in w2v_similar %}
+  <a href="?q={{ word }}">{{ word }}</a> |
+  {% endfor %}
+</div>
 
-<h3>DanNet synsets</h3>
-{{ dannet_synset_table | safe }}
+<div class="container">
 
-<h3>DanNet relations</h3>
-{{ dannet_relations_table | safe }}
+  <h3>Related Wikipedia titles</h3>
+  
+  {% for article in esa_related %}
+  <a href="https://da.wikipedia.org/wiki/{{ article }}">{{ article }}</a>
+  |
+  {% endfor %}
+</div>
 
+<div class="container">
+  <h3>DanNet synsets</h3>
+  {{ dannet_synset_table | safe }}
+  
+  <h3>DanNet relations</h3>
+  {{ dannet_relations_table | safe }}
+</div>
 
 {% endblock %}
 
