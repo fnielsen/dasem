@@ -112,6 +112,8 @@ class Dannet(object):
             return self._db
 
         full_filename = self.full_filename(DANNET_SQLITE_FILENAME)
+        self.logger.info('Trying to read database file {}'.format(
+            full_filename))
         try:
             self._db = DB(filename=full_filename, dbtype='sqlite')
         except:
