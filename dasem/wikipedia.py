@@ -27,6 +27,8 @@ import codecs
 
 from collections import Counter
 
+import logging
+
 import os.path
 
 import re
@@ -53,7 +55,6 @@ import numpy as np
 
 from scipy.sparse import lil_matrix
 
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from tqdm import tqdm
@@ -527,10 +528,11 @@ class ExplicitSemanticAnalysis(object):
     using Wikipedia-based explicit semantic analysis, 2007.
 
     """
-    
+
     def __init__(
             self, autosetup=True, stop_words=None, norm='l2', use_idf=True,
-            sublinear_tf=False, max_n_pages=None, display=False):
+            sublinear_tf=False, max_n_pages=None, display=False,
+            logging_level=logging.WARN):
         """Setup model.
 
         Several of the parameters are piped further on to sklearns
@@ -546,7 +548,12 @@ class ExplicitSemanticAnalysis(object):
             Enable inverse-document-frequency reweighting.
 
         """
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
+        self.logger.setLevel(logging_level)
+
         if autosetup:
+            self.logger.info('Trying to load pickle files')
             try:
                 self.load_pkl(display=display)
             except:
@@ -565,13 +572,12 @@ class ExplicitSemanticAnalysis(object):
 
     def save_json(self, filename=ESA_JSON_FILENAME, display=False):
         full_filename = self.full_filename(filename)
-        if display:
-            tqdm.write('Writing parameters to JSON file {}'.format(
-                full_filename))
+        self.logger.info('Writing parameters to JSON file {}'.format(
+            full_filename))
         with gzip.open(full_filename, 'w') as f:
             f.write(jsonpickle.encode(
                 {'Y': self._Y,
-                 'transformer' :self._transformer,
+                 'transformer': self._transformer,
                  'titles': self._titles}))
 
     def load_json(self, filename=ESA_JSON_FILENAME, display=False):
@@ -584,16 +590,15 @@ class ExplicitSemanticAnalysis(object):
 
         """
         full_filename = self.full_filename(filename)
-        if display:
-            tqdm.write('Reading parameters from JSON file {}'.format(
-                full_filename))
+        self.logger.info('Reading parameters from JSON file {}'.format(
+            full_filename))
         with gzip.open(full_filename) as f:
             data = jsonpickle.decode(f.read())
 
         self._Y = data['Y']
         self._transformer = data['transformer']
         self._titles = data['titles']
-            
+
     def save_pkl(self, display=False):
         """Save parameters to pickle files."""
         items = [
@@ -602,10 +607,9 @@ class ExplicitSemanticAnalysis(object):
             ('_transformer', 'wikipedia-esa-transformer.pkl.gz')
         ]
         for attr, filename in items:
-            full_filename = self.full_filename(filename) 
-            if display:
-                tqdm.write('Writing parameters to pickle file {}'.format(
-                    full_filename))
+            full_filename = self.full_filename(filename)
+            self.logger.info('Writing parameters to pickle file {}'.format(
+                full_filename))
             with gzip.open(full_filename, 'w') as f:
                 pickle.dump(getattr(self, attr), f, -1)
 
@@ -617,13 +621,12 @@ class ExplicitSemanticAnalysis(object):
             ('_transformer', 'wikipedia-esa-transformer.pkl.gz')
         ]
         for attr, filename in items:
-            full_filename = self.full_filename(filename) 
-            if display:
-                tqdm.write('Reading parameters from pickle file {}'.format(
-                    full_filename))
+            full_filename = self.full_filename(filename)
+            self.logger.info('Reading parameters from pickle file {}'.format(
+                full_filename))
             with gzip.open(full_filename) as f:
                 setattr(self, attr, pickle.load(f))
-                
+
     def setup(
             self, stop_words=None, norm='l2', use_idf=True, sublinear_tf=False,
             max_n_pages=None, display=False):
@@ -633,7 +636,7 @@ class ExplicitSemanticAnalysis(object):
         -------
         self : ExplicitSemanticAnalysis
             Self object.
-        
+
         """
         self._dump_file = XmlDumpFile()
 
@@ -647,15 +650,14 @@ class ExplicitSemanticAnalysis(object):
                          max_n_pages=max_n_pages,
                          display=display))
 
-        if display:
-            tqdm.write('TFIDF vectorizing')
+        self.logger.info('TFIDF vectorizing')
         self._transformer = TfidfVectorizer(
             stop_words=stop_words, norm=norm, use_idf=use_idf,
             sublinear_tf=sublinear_tf)
         self._Y = self._transformer.fit_transform(texts)
 
         return self
-        
+
     def relatedness(self, phrases):
         """Return semantic relatedness between two phrases.
 
@@ -723,7 +725,7 @@ class ExplicitSemanticAnalysis(object):
         R = self.relatedness(phrases)
         indices = np.argsort(R.sum(axis=0) - 1)
         return [phrases[idx] for idx in indices]
-    
+
 
 class Word2Vec(object):
     """Gensim Word2vec for Danish Wikipedia corpus."""
@@ -752,7 +754,7 @@ class Word2Vec(object):
                 display=self.display)
             return sentences
 
-    def __init__(self, autosetup=True):
+    def __init__(self, autosetup=True, logging_level=logging.WARN):
         """Setup model.
 
         Parameters
@@ -761,6 +763,10 @@ class Word2Vec(object):
             Determines whether the Word2Vec model should be autoloaded.
 
         """
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
+        self.logger.setLevel(logging_level)
+
         self.model = None
         if autosetup:
             try:
@@ -788,6 +794,8 @@ class Word2Vec(object):
 
         """
         full_filename = self.full_filename(filename)
+        self.logger.info('Loading word2vec model from {}'.format(
+            full_filename))
         self.model = gensim.models.Word2Vec.load(full_filename)
 
     def save(self, filename=WORD2VEC_FILENAME):
