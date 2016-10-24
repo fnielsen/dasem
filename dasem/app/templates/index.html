@@ -31,6 +31,20 @@
 </div>
 
 <div class="container">
+
+  <h3>Lemmas</h3>
+
+  {% for word, counts in eparole_lemmas.items() %}
+  <a href="?q={{ word }}">{{ word }}</a> : 
+  {% for lemma, count in counts.items() %}
+  <a href="?q={{ lemma }}">{{ lemma }}</a> |
+  {% endfor %}
+  <br/>
+  {% endfor %}
+  
+</div>
+
+<div class="container">
   <h3>DanNet synsets</h3>
   {{ dannet_synset_table | safe }}
   
