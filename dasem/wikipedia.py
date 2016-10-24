@@ -571,6 +571,7 @@ class ExplicitSemanticAnalysis(object):
             return os.path.join(data_directory(), 'models', filename)
 
     def save_json(self, filename=ESA_JSON_FILENAME, display=False):
+        """Save parameter to JSON file."""
         full_filename = self.full_filename(filename)
         self.logger.info('Writing parameters to JSON file {}'.format(
             full_filename))
