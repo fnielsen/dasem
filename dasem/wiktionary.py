@@ -52,20 +52,19 @@ def get_nouns(languages=('da', 'de', 'en')):
 
     nouns = []
     for language in languages:
-        prefix = categories[language].split(':')[0]
         url = API_URL_PATTERN.format(language)
         params['cmtitle'] = categories[language]
         params['cmcontinue'] = ''
         response = requests.get(url, params=params).json()
         nouns.extend([member['title']
                       for member in response['query']['categorymembers']
-                      if not member['title'].startswith(prefix)])
+                      if ':' not in member['title']])
         while 'continue' in response:
             params['cmcontinue'] = response['continue']['cmcontinue']
             response = requests.get(url, params=params).json()
             nouns.extend(
                 [member['title']
                  for member in response['query']['categorymembers']
-                 if not member['title'].startswith(prefix)])
+                 if ':' not in member['title']])
 
     return set(nouns)
