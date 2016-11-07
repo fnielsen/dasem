@@ -29,6 +29,20 @@ For instance, relations.csv describes 2355 (gruppe_1; samling_3) as being a
 hyponym of 20633 (DN:TOP) and synonym of WordNet's ENG20-08119921-n.
 
 
+Examples
+--------
+>>> # Danish nouns
+>>> dannet = Dannet()
+>>> query = "select w.form from words w where w.pos = 'Noun'"
+>>> nouns = set(dannet.db.query(query).form)
+>>> 'guitar' in nouns
+True
+>>> 'guitaren' in nouns
+False
+>>> len(nouns)
+48404
+
+
 References
 ----------
 http://wordnet.dk/
