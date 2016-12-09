@@ -12,6 +12,8 @@ Example:
 
 from __future__ import print_function
 
+import re
+
 from bs4 import BeautifulSoup
 
 import requests
@@ -22,14 +24,57 @@ from sparql import Service
 
 
 SPARQL_QUERY = """
-SELECT ?item ?itemLabel ?article WHERE {
+SELECT distinct ?item ?itemLabel ?article WHERE {
   ?article schema:about ?item.
   ?article schema:isPartOf <https://da.wikisource.org/>.
-  values ?kind { wd:Q7725634 wd:Q1372064 wd:Q7366 }
-  ?item (wdt:P31/wdt:P291*) ?kind .
+  values ?kind { wd:Q7725634 wd:Q1372064 wd:Q7366 wd:Q49848}
+  ?item (wdt:P31/wdt:P279*) ?kind .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "da,en". }
 }
 """
+
+
+def extract_text(text):
+    """Extract relevant part of text from page.
+
+    Attempts with various regular expressions to extract the relevant
+    text from the downloaded parsed wikipage.
+
+    Parameters
+    ----------
+    text : str
+        Downloaded text.
+
+    Returns
+    -------
+    extracted_text : str
+        Extracted text.
+
+    """
+    # Ignore bottom license information
+    above_license = re.findall(r'(.*)Public domainPublic domain',
+                               text, flags=re.UNICODE | re.DOTALL)
+    if above_license:
+        text = "".join(above_license)
+
+    after_teksten = re.findall(ur'Teksten\[redig\xe9r\](.*)', text,
+                               flags=re.UNICODE | re.DOTALL)
+    if after_teksten:
+        return u"\n\n".join(after_teksten)
+
+    # Match <poem> and just extract that.
+    in_poem = re.findall(r'<poem>(.*?)<poem>', text,
+                         flags=re.UNICODE | re.DOTALL)
+    if in_poem:
+        return u"\n\n".join(in_poem)
+
+    # Match bottom of infobox on some of the songs
+    rest = re.findall(r'.*Wikipedia-link\s*(.*)', text,
+                      flags=re.UNICODE | re.DOTALL)
+    if rest:
+        return u"\n\n".join(rest)
+
+    return text
 
 
 def get_list_from_wikidata():
@@ -47,7 +92,7 @@ def get_list_from_wikidata():
     return df
 
 
-def get_text_from_title(title):
+def get_text_by_title(title):
     """Get text from Wikisource based on title.
 
     If the text is split over several wikipages (which is the case with novels)
@@ -68,7 +113,7 @@ def get_text_from_title(title):
     params = {'page': title, 'action': 'parse', 'format': 'json'}
     data = requests.get(url, params=params).json()
     if 'parse' in data:
-        text = BeautifulSoup(data['parse']['text']['*']).get_text()
+        text = BeautifulSoup(data['parse']['text']['*'], "lxml").get_text()
     else:
         text = None
     return text
@@ -81,8 +126,10 @@ def main():
     arguments = docopt(__doc__)
 
     if arguments['get']:
-        text = get_text_from_title(arguments['<title>'])
-        print(text.encode('utf-8'))
+        text = get_text_by_title(arguments['<title>'])
+        if text:
+            extracted_text = extract_text(text)
+            print(extracted_text.encode('utf-8'))
 
     elif arguments['list']:
         df = get_list_from_wikidata()
