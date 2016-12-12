@@ -40,6 +40,11 @@ def extract_text(text):
     Attempts with various regular expressions to extract the relevant
     text from the downloaded parsed wikipage.
 
+    Poems might have the '<poem>...</poem>' construct. Text between these two
+    tags are extracted and returned.
+
+    Public domain license information is ignored.
+
     Parameters
     ----------
     text : str
@@ -51,29 +56,28 @@ def extract_text(text):
         Extracted text.
 
     """
-    # Ignore bottom license information
-    above_license = re.findall(r'(.*)Public domainPublic domain',
-                               text, flags=re.UNICODE | re.DOTALL)
-    if above_license:
-        text = "".join(above_license)
+    # Match <poem> and just extract that.
+    in_poem = re.findall(r'<poem>(.*?)</poem>', text,
+                         flags=re.UNICODE | re.DOTALL)
+    if in_poem:
+        return u"\n\n".join(in_poem)
 
+    # Ignore license information. This might be above or below the text.
+    text = re.sub((r'Public domainPublic domain(.*?), '
+                   'da det blev udgivet.{15,25}\.$'), '\n', 
+                   text, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+    
     after_teksten = re.findall(ur'Teksten\[redig\xe9r\](.*)', text,
                                flags=re.UNICODE | re.DOTALL)
     if after_teksten:
         return u"\n\n".join(after_teksten)
-
-    # Match <poem> and just extract that.
-    in_poem = re.findall(r'<poem>(.*?)<poem>', text,
-                         flags=re.UNICODE | re.DOTALL)
-    if in_poem:
-        return u"\n\n".join(in_poem)
 
     # Match bottom of infobox on some of the songs
     rest = re.findall(r'.*Wikipedia-link\s*(.*)', text,
                       flags=re.UNICODE | re.DOTALL)
     if rest:
         return u"\n\n".join(rest)
-
+   
     return text
 
 
