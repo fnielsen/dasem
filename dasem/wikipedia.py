@@ -68,6 +68,8 @@ jsonpickle_numpy.register_handlers()
 
 BZ2_XML_DUMP_FILENAME = 'dawiki-20160901-pages-articles.xml.bz2'
 
+DOC2VEC_FILENAME = 'wikipedia-doc2vec.pkl.gz'
+
 TFIDF_VECTORIZER_FILENAME = 'wikipedia-tfidfvectorizer.json'
 
 WORD2VEC_FILENAME = 'wikipedia-word2vec.pkl.gz'
@@ -178,7 +180,8 @@ class XmlDumpFile(object):
 
     """
 
-    def __init__(self, filename=BZ2_XML_DUMP_FILENAME):
+    def __init__(self, filename=BZ2_XML_DUMP_FILENAME,
+                 logging_level=logging.WARN):
         """Prepare dump file for reading.
 
         Parameters
@@ -187,6 +190,10 @@ class XmlDumpFile(object):
             Filename or the XML dump file.
 
         """
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
+        self.logger.setLevel(logging_level)
+
         full_filename = self.full_filename(filename)
         self.filename = full_filename
 
@@ -383,7 +390,7 @@ class XmlDumpFile(object):
             if max_n_pages is not None and n >= max_n_pages:
                 break
 
-    def iter_article_words(self, max_n_pages=None):
+    def iter_article_title_and_words(self, max_n_pages=None):
         """Iterate over articles returning word list.
 
         Parameters
@@ -403,6 +410,28 @@ class XmlDumpFile(object):
             words = self.word_pattern.findall(page['text'])
             words = [word.lower() for word in words if word]
             yield page['title'], words
+
+    def iter_article_words(self, lower=True, max_n_pages=None):
+        """Iterate over articles returning word list.
+
+        Parameters
+        ----------
+        max_n_pages : int or None
+            Maximum number of pages to iterate over.
+
+        Yields
+        ------
+        title : str
+            Title of article
+        words : list of str
+            List of words
+
+        """
+        self.logger.debug('Article words iterator')
+        for page in self.iter_article_pages(max_n_pages=max_n_pages):
+            words = self.word_pattern.findall(page['text'])
+            words = [word.lower() for word in words if word and lower]
+            yield words
 
     def article_link_graph(self, verbose=False):
         """Return article link graph.
@@ -492,7 +521,8 @@ class XmlDumpFile(object):
         # Identify terms
         n_pages = 0
         all_terms = []
-        for title, words in self.iter_article_words(max_n_pages=max_n_pages):
+        for title, words in self.iter_article_title_and_words(
+                max_n_pages=max_n_pages):
             n_pages += 1
             all_terms.extend(words)
             if verbose and not n_pages % 100:
@@ -508,7 +538,7 @@ class XmlDumpFile(object):
         # Count terms wrt. articles
         rows = []
         columns = dict(zip(terms, range(len(terms))))
-        for n, (title, words) in enumerate(self.iter_article_words(
+        for n, (title, words) in enumerate(self.iter_article_title_and_words(
                 max_n_pages=max_n_pages)):
             rows.append(title)
             for word in words:
@@ -906,6 +936,182 @@ class Word2Vec(object):
         return self.model.similarity(word1, word2)
 
 
+class Doc2Vec(object):
+    """Gensim Doc2vec for Danish Wikipedia corpus."""
+
+    class ArticleWordsIterator():
+        """Article words iterable.
+
+        References
+        ----------
+        https://stackoverflow.com/questions/34166369
+
+        """
+
+        def __init__(self, lower=True, max_n_pages=None):
+            """Setup parameters."""
+            self.lower = lower
+            self.max_n_pages = max_n_pages
+
+        def __iter__(self):
+            """Restart and return iterable."""
+            dump_file = XmlDumpFile()
+            words = dump_file.iter_article_words(
+                lower=self.lower,
+                max_n_pages=self.max_n_pages)
+            return words
+
+    def __init__(self, autosetup=True, logging_level=logging.WARN):
+        """Setup model.
+
+        Parameters
+        ----------
+        autosetup : bool, optional
+            Determines whether the DocVec model should be autoloaded.
+
+        """
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
+        self.logger.setLevel(logging_level)
+
+        self.model = None
+        if autosetup:
+            try:
+                self.load()
+            except:
+                self.train()
+                self.save()
+
+    def full_filename(self, filename):
+        """Return filename with full filename path."""
+        if os.path.sep in filename:
+            return filename
+        else:
+            return os.path.join(data_directory(), 'models', filename)
+
+    def load(self, filename=DOC2VEC_FILENAME):
+        """Load model from pickle file.
+
+        This function is unsafe. Do not load unsafe files.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of pickle file.
+
+        """
+        full_filename = self.full_filename(filename)
+        self.logger.info('Loading doc2vec model from {}'.format(
+            full_filename))
+        self.model = gensim.models.Doc2Vec.load(full_filename)
+
+    def save(self, filename=DOC2VEC_FILENAME):
+        """Save model to pickle file.
+
+        The Gensim load file is used which can also compress the file.
+
+        Parameters
+        ----------
+        filename : str, optional
+            Filename.
+
+        """
+        full_filename = self.full_filename(filename)
+        self.model.save(full_filename)
+
+    def train(self, size=100, window=8, min_count=5, workers=4,
+              max_n_pages=None, display=False):
+        """Train Gensim Doc2Vec model.
+
+        Parameters
+        ----------
+        size : int, optional
+            Dimension of the word2vec space.
+
+        """
+        articles = Doc2Vec.ArticleWordsIterator(
+            max_n_pages=max_n_pages)
+        self.model = gensim.models.Doc2Vec(
+            articles, size=size, window=window, min_count=min_count,
+            workers=workers)
+
+    def doesnt_match(self, words):
+        """Return odd word of list.
+
+        This method forward the matching to the `doesnt_match` method in the
+        Word2Vec class of Gensim.
+
+        Parameters
+        ----------
+        words : list of str
+            List of words represented as strings.
+
+        Returns
+        -------
+        word : str
+            Outlier word.
+
+        Examples
+        --------
+        >>> d2v = Doc2Vec()
+        >>> d2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
+        'stol'
+
+        """
+        return self.model.doesnt_match(words)
+
+    def most_similar(self, positive=[], negative=[], topn=10,
+                     restrict_vocab=None, indexer=None):
+        """Return most similar words.
+
+        This method will forward the similarity search to the `most_similar`
+        method in the Doc2Vec class in Gensim. The input parameters and
+        returned result are the same.
+
+        Parameters
+        ----------
+        positive : list of str
+            List of strings with words to include for similarity search.
+        negative : list of str
+            List of strings with words to discount.
+        topn : int
+            Number of words to return
+
+        Returns
+        -------
+        words : list of tuples
+            List of 2-tuples with word and similarity.
+
+        Examples
+        --------
+        >>> d2v = Doc2Vec()
+        >>> words = w2v.most_similar('studieretning')
+        >>> len(words)
+        10
+
+        """
+        return self.model.most_similar(
+            positive, negative, topn, restrict_vocab, indexer)
+
+    def similarity(self, word1, word2):
+        """Return value for similarity between two words.
+
+        Parameters
+        ----------
+        word1 : str
+            First word to be compared
+        word2 : str
+            Second word.
+
+        Returns
+        -------
+        value : float
+            Similarity as a float value between 0 and 1.
+
+        """
+        return self.model.similarity(word1, word2)
+
+
 def main():
     """Handle command-line interface."""
     from docopt import docopt
@@ -947,7 +1153,7 @@ def main():
         print(count)
 
     elif arguments['iter-article-words']:
-        for title, words in dump_file.iter_article_words(
+        for title, words in dump_file.iter_article_title_and_words(
                 max_n_pages=int(arguments['--max-n-pages'])):
             print(json.dumps([title, words]))
 
