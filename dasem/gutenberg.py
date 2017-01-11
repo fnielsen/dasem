@@ -6,9 +6,14 @@ Usage:
   dasem.gutenberg get-all-texts [options]
   dasem.gutenberg list-all-ids
   dasem.gutenberg list
+  dasem.gutenberg most-similar [options] <word>
+  dasem.gutenberg train-and-save-word2vec [options]
 
 Options:
+  --debug        Debug information
+  --ie=encoding  Input encoding [default: utf-8']
   --oe=encoding  Output encoding [default: utf-8']
+  -v --verbose   Verbose information
 
 Description:
   This is an interface to Danish texts on Gutenberg.
@@ -19,6 +24,8 @@ Description:
 
   wget -w 2 -m -H \
     "http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=da"
+
+  The default directory for the data is: `~/dasem_data/gutenberg/`.
 
   Danish works in Project Gutenberg are to some extent indexed on Wikidata. The
   works can be queried with:
@@ -39,16 +46,21 @@ References:
 
 from __future__ import print_function
 
+import logging
+
 import re
 
 from os import walk
-from os.path import join
+from os.path import join, sep
 
 from six import u
 
 from zipfile import ZipFile
 
+import gensim
+
 import nltk
+from nltk.tokenize import WordPunctTokenizer
 
 from pandas import DataFrame
 
@@ -67,6 +79,8 @@ SELECT ?work ?workLabel ?authorLabel ?gutenberg WHERE {
   service wikibase:label { bd:serviceParam wikibase:language "da" }
 }
 """
+
+WORD2VEC_FILENAME = 'gutenberg-word2vec.pkl.gz'
 
 
 def extract_text(text):
@@ -170,10 +184,14 @@ class Gutenberg(object):
 
     def __init__(self):
         """Setup data directory and other constants."""
+        self.logger = logging.getLogger('dasem.gutenberg.Gutenberg')
+        self.logger.addHandler(logging.NullHandler())
+
         self.data_directory = join(data_directory(), 'gutenberg',
                                    'www.gutenberg.lib.md.us')
         self.whitespaces_pattern = re.compile(
             '\s+', flags=re.DOTALL | re.UNICODE)
+        self.word_tokenizer = WordPunctTokenizer()
 
     def translate_aa(self, text):
         """Translate double-a to 'bolle-aa'.
@@ -267,6 +285,7 @@ class Gutenberg(object):
             directory = join(self.data_directory, l[0], l[1], l[2], s)
 
         zip_filename = join(directory, s + '-8.zip')
+        self.logger.debug('Reading text from {}'.format(zip_filename))
         with ZipFile(zip_filename) as zip_file:
             filename = join(s, s + '-8.txt')
             try:
@@ -293,6 +312,33 @@ class Gutenberg(object):
             return extracted_text
         else:
             return text
+
+    def iter_sentence_words(
+            self, translate_aa=True, translate_whitespaces=True, lower=True):
+        """Yield list of words from sentences.
+
+        Parameters
+        ----------
+        translate_aa : bool, default True
+            Translate double-a to 'bolle-aa'.
+        translate_whitespaces : bool, default True
+            Translate multiple whitespaces to single whitespaces
+        lower : bool, default True
+            Lower case the words.
+
+        Yields
+        ------
+        words : list of str
+            List of words
+
+        """
+        for sentence in self.iter_sentences(
+                translate_aa=translate_aa,
+                translate_whitespaces=translate_whitespaces):
+            words = self.word_tokenizer.tokenize(sentence)
+            if lower:
+                words = [word.lower() for word in words]
+            yield words
 
     def iter_sentences(self, translate_aa=True, translate_whitespaces=True):
         """Yield sentences.
@@ -351,22 +397,214 @@ class Gutenberg(object):
                 yield text
 
 
+class Word2Vec(object):
+    """Gensim Word2vec for Danish Gutenberg corpus.
+
+    Trained models can be saved and loaded via the `save` and `load` methods.
+
+    """
+
+    class SentenceWords():
+        """Sentence iterable.
+
+        Parameters
+        ----------
+        autosetup : bool, optional
+            Determines whether the Word2Vec model should be autoloaded.
+        logging_level : logging.ERROR or other, default logging.WARN
+            Logging level.
+
+        References
+        ----------
+        https://stackoverflow.com/questions/34166369
+
+        """
+
+        def __iter__(self):
+            """Restart and return iterable."""
+            gutenberg = Gutenberg()
+            sentences = gutenberg.iter_sentence_words()
+            return sentences
+
+    def __init__(self, autosetup=True, logging_level=logging.WARN):
+        """Setup model."""
+        self.logger = logging.getLogger('dasem.gutenberg.Word2Vec')
+        self.logger.addHandler(logging.NullHandler())
+
+        self.model = None
+        if autosetup:
+            self.logger.info('Autosetup')
+            try:
+                self.load()
+            except:
+                self.logger.info('Loading word2vec model failed')
+                self.train()
+                self.save()
+
+    def full_filename(self, filename):
+        """Return filename with full filename path."""
+        if sep in filename:
+            return filename
+        else:
+            return join(data_directory(), 'gutenberg', filename)
+
+    def load(self, filename=WORD2VEC_FILENAME):
+        """Load model from pickle file.
+
+        This function is unsafe. Do not load unsafe files.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of pickle file.
+
+        """
+        full_filename = self.full_filename(filename)
+        self.logger.info('Trying to load word2vec model from {}'.format(
+            full_filename))
+        self.model = gensim.models.Word2Vec.load(full_filename)
+
+    def save(self, filename=WORD2VEC_FILENAME):
+        """Save model to pickle file.
+
+        The Gensim load file is used which can also compress the file.
+
+        Parameters
+        ----------
+        filename : str, optional
+            Filename.
+
+        """
+        full_filename = self.full_filename(filename)
+        self.model.save(full_filename)
+
+    def train(self, size=100, window=5, min_count=5, workers=4):
+        """Train Gensim Word2Vec model.
+
+        Parameters
+        ----------
+        size : int, default 100
+            Dimension of the word2vec space.
+
+        """
+        sentences = Word2Vec.SentenceWords()
+        self.logger.info(
+            ('Training word2vec model with parameters: '
+             'size={size}, window={window}, '
+             'min_count={min_count}, workers={workers}').format(
+                 size=size, window=window, min_count=min_count,
+                 workers=workers))
+        self.model = gensim.models.Word2Vec(
+            sentences, size=size, window=window, min_count=min_count,
+            workers=workers)
+
+    def doesnt_match(self, words):
+        """Return odd word of list.
+
+        This method forward the matching to the `doesnt_match` method in the
+        Word2Vec class of Gensim.
+
+        Parameters
+        ----------
+        words : list of str
+            List of words represented as strings.
+
+        Returns
+        -------
+        word : str
+            Outlier word.
+
+        Examples
+        --------
+        >>> w2v = Word2Vec()
+        >>> w2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
+        'stol'
+
+        """
+        return self.model.doesnt_match(words)
+
+    def most_similar(self, positive=[], negative=[], topn=10,
+                     restrict_vocab=None, indexer=None):
+        """Return most similar words.
+
+        This method will forward the similarity search to the `most_similar`
+        method in the Word2Vec class in Gensim. The input parameters and
+        returned result are the same.
+
+        Parameters
+        ----------
+        positive : list of str
+            List of strings with words to include for similarity search.
+        negative : list of str
+            List of strings with words to discount.
+        topn : int
+            Number of words to return
+
+        Returns
+        -------
+        words : list of tuples
+            List of 2-tuples with word and similarity.
+
+        Examples
+        --------
+        >>> w2v = Word2Vec()
+        >>> words = w2v.most_similar('studieretning')
+        >>> len(words)
+        10
+
+        """
+        return self.model.most_similar(
+            positive, negative, topn, restrict_vocab, indexer)
+
+    def similarity(self, word1, word2):
+        """Return value for similarity between two words.
+
+        Parameters
+        ----------
+        word1 : str
+            First word to be compared
+        word2 : str
+            Second word.
+
+        Returns
+        -------
+        value : float
+            Similarity as a float value between 0 and 1.
+
+        """
+        return self.model.similarity(word1, word2)
+
+
 def main():
     """Handle command-line interface."""
     from docopt import docopt
 
     arguments = docopt(__doc__)
     encoding = arguments['--oe']
+    input_encoding = arguments['--ie']
+    logging_level = logging.WARN
+    if arguments['--debug']:
+        logging_level = logging.DEBUG
+    elif arguments['--verbose']:
+        logging_level = logging.INFO
+
+    logger = logging.getLogger('dasem.gutenberg')
+    logger.setLevel(logging_level)
+    logging_handler = logging.StreamHandler()
+    logging_handler.setLevel(logging_level)
+    logging_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_handler.setFormatter(logging_formatter)
+    logger.addHandler(logging_handler)
 
     if arguments['get']:
         gutenberg = Gutenberg()
         text = gutenberg.get_text_by_id(arguments['<id>'])
-        print(text)
+        print(text.encode(encoding))
 
     elif arguments['get-all-sentences']:
         gutenberg = Gutenberg()
         for sentence in gutenberg.iter_sentences():
-            print("-" * 70)
             print(sentence.encode(encoding))
 
     elif arguments['get-all-texts']:
@@ -382,8 +620,20 @@ def main():
 
     elif arguments['list']:
         df = get_list_from_wikidata()
-        print(df.to_csv(encoding='utf-8'))
+        print(df.to_csv(encoding=encoding))
 
+    elif arguments['most-similar']:
+        word = arguments['<word>'].decode(input_encoding)
+        word2vec = Word2Vec()
+        words_and_scores = word2vec.most_similar(word)
+        for word, score in words_and_scores:
+            print(word.encode(encoding))
+
+    elif arguments['train-and-save-word2vec']:
+        word2vec = Word2Vec(autosetup=False)
+        word2vec.train()
+        logger.info('Saving word2vec model')
+        word2vec.save()
 
 if __name__ == '__main__':
     main()
