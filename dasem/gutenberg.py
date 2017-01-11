@@ -548,7 +548,7 @@ class Word2Vec(object):
         Examples
         --------
         >>> w2v = Word2Vec()
-        >>> words = w2v.most_similar('studieretning')
+        >>> words = w2v.most_similar('studie')
         >>> len(words)
         10
 
@@ -623,10 +623,10 @@ def main():
         print(df.to_csv(encoding=encoding))
 
     elif arguments['most-similar']:
-        word = arguments['<word>'].decode(input_encoding)
+        word = arguments['<word>'].decode(input_encoding).lower()
         word2vec = Word2Vec()
-        words_and_scores = word2vec.most_similar(word)
-        for word, score in words_and_scores:
+        words_and_similarity = word2vec.most_similar(word)
+        for word, similarity in words_and_similarity:
             print(word.encode(encoding))
 
     elif arguments['train-and-save-word2vec']:
