@@ -2,6 +2,7 @@ r"""gutenberg.
 
 Usage:
   dasem.gutenberg get <id>
+  dasem.gutenberg get-all-sentences [options]
   dasem.gutenberg get-all-texts [options]
   dasem.gutenberg list-all-ids
   dasem.gutenberg list
@@ -43,7 +44,11 @@ import re
 from os import walk
 from os.path import join
 
+from six import u
+
 from zipfile import ZipFile
+
+import nltk
 
 from pandas import DataFrame
 
@@ -164,9 +169,53 @@ class Gutenberg(object):
     """
 
     def __init__(self):
-        """Setup data directory."""
+        """Setup data directory and other constants."""
         self.data_directory = join(data_directory(), 'gutenberg',
                                    'www.gutenberg.lib.md.us')
+        self.whitespaces_pattern = re.compile(
+            '\s+', flags=re.DOTALL | re.UNICODE)
+
+    def translate_aa(self, text):
+        """Translate double-a to 'bolle-aa'.
+
+        Parameters
+        ----------
+        test : str
+            Input text to be translated.
+
+        Returns
+        -------
+        translated_text : str
+            Text with double-a translated to bolle-aa.
+
+        """
+        return text.replace(
+            'aa', u('\xe5')).replace(
+                'Aa', u('\xc5')).replace(
+                    'AA', u('\xc5'))
+
+    def translate_whitespaces(self, text):
+        r"""Translate multiple whitespaces to a single space.
+
+        Parameters
+        ----------
+        text : str
+            Input string to be translated.
+
+        Returns
+        -------
+        translated_text : str
+            String with multiple whitespaces translated to a single whitespace.
+
+        Examples
+        --------
+        >>> gutenberg = Gutenberg()
+        >>> gutenberg.translate_whitespaces('\n Hello \n  World \n')
+        ' Hello World '
+
+        """
+        translated_text = self.whitespaces_pattern.sub(' ', text)
+        return translated_text
 
     def get_all_ids(self):
         """Get all Gutenberg text ids from mirrored data.
@@ -245,8 +294,48 @@ class Gutenberg(object):
         else:
             return text
 
-    def iter_texts(self):
+    def iter_sentences(self, translate_aa=True, translate_whitespaces=True):
+        """Yield sentences.
+
+        The method uses the NLTK Danish sentence tokenizer.
+
+        Yields
+        ------
+        sentence : str
+            String with sentences.
+        translate_aa : bool, default True
+            Translate double-aa to bolle-aa.
+        translate_whitespaces : book, default True
+            Translate multiple whitespaces to a single space.
+
+        Examples
+        --------
+        >>> gutenberg = Gutenberg()
+        >>> found = False
+        >>> for sentence in gutenberg.iter_sentences():
+        ...     if 'Indholdsfortegnelse.' == sentence:
+        ...         found = True
+        ...         break
+        >>> found
+        True
+
+        """
+        tokenizer = nltk.data.load('tokenizers/punkt/danish.pickle')
+        for text in self.iter_texts(translate_aa=translate_aa):
+            sentences = tokenizer.tokenize(text)
+            for sentence in sentences:
+                if translate_whitespaces:
+                    yield self.translate_whitespaces(sentence)
+                else:
+                    yield sentence
+
+    def iter_texts(self, translate_aa=True):
         """Yield texts.
+
+        Parameters
+        ----------
+        translate_aa : bool, default True
+            Translate double-aa to bolle-aa.
 
         Yields
         ------
@@ -255,7 +344,11 @@ class Gutenberg(object):
 
         """
         for id in self.get_all_ids():
-            yield self.get_text_by_id(id)
+            text = self.get_text_by_id(id)
+            if translate_aa:
+                yield self.translate_aa(text)
+            else:
+                yield text
 
 
 def main():
@@ -269,6 +362,12 @@ def main():
         gutenberg = Gutenberg()
         text = gutenberg.get_text_by_id(arguments['<id>'])
         print(text)
+
+    elif arguments['get-all-sentences']:
+        gutenberg = Gutenberg()
+        for sentence in gutenberg.iter_sentences():
+            print("-" * 70)
+            print(sentence.encode(encoding))
 
     elif arguments['get-all-texts']:
         gutenberg = Gutenberg()
