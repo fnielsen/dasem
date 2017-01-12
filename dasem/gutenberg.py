@@ -309,10 +309,6 @@ class Gutenberg(object):
                 with zip_file.open(filename) as f:
                     encoded_text = f.read()
 
-        #import pdb
-        #pdb.set_trace()
-        #encoded_text = b(encoded_text)
-                    
         if encoded_text.find(b('Character set encoding: ISO-8859-1')) != -1:
             # encoded_text, flags=re.DOTALL | re.MULTILINE):
             text = encoded_text.decode('ISO-8859-1')
@@ -595,7 +591,7 @@ class Word2Vec(object):
 def main():
     """Handle command-line interface."""
     import os
-    
+
     from docopt import docopt
 
     arguments = docopt(__doc__)
@@ -612,7 +608,7 @@ def main():
         logging_level = logging.DEBUG
     elif arguments['--verbose']:
         logging_level = logging.INFO
-        
+
     logger = logging.getLogger('dasem.gutenberg')
     logger.setLevel(logging_level)
     logging_handler = logging.StreamHandler()
