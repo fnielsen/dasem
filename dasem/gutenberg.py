@@ -1,7 +1,8 @@
 r"""gutenberg.
 
 Usage:
-  dasem.gutenberg get <id>
+  dasem.gutenberg --help
+  dasem.gutenberg get [options] <id>
   dasem.gutenberg get-all-sentences [options]
   dasem.gutenberg get-all-texts [options]
   dasem.gutenberg list-all-ids
@@ -10,10 +11,11 @@ Usage:
   dasem.gutenberg train-and-save-word2vec [options]
 
 Options:
-  --debug        Debug information
-  --ie=encoding  Input encoding [default: utf-8']
-  --oe=encoding  Output encoding [default: utf-8']
-  -v --verbose   Verbose information
+  --debug           Debug information
+  --ie=encoding     Input encoding [default: utf-8]
+  -o --output=file  Output filename, default output to stdout
+  --oe=encoding     Output encoding [default: utf-8]
+  -v --verbose      Verbose information
 
 Description:
   This is an interface to Danish texts on Gutenberg.
@@ -38,6 +40,12 @@ Description:
 
   The `list` command will query Wikidata.
 
+Examples:
+  $ python -m dasem.gutenberg get-all-sentences --output sentences.txt
+
+  $ python -m dasem.gutenberg most-similar mand | grep kvinde
+  kvinde
+
 References:
   https://www.gutenberg.org/wiki/Gutenberg:Information_About_Robot_Access_to_our_Pages
 
@@ -50,10 +58,10 @@ import logging
 
 import re
 
-from os import walk
+from os import walk, write
 from os.path import join, sep
 
-from six import u
+from six import b, u
 
 from zipfile import ZipFile
 
@@ -66,7 +74,11 @@ from pandas import DataFrame
 
 import requests
 
-from sparql import Service
+try:
+    from sparql import Service
+except SyntaxError:
+    # TODO: Python 3
+    pass
 
 from .config import data_directory
 
@@ -297,12 +309,17 @@ class Gutenberg(object):
                 with zip_file.open(filename) as f:
                     encoded_text = f.read()
 
-        if re.search(r'^Character set encoding: ISO-8859-1',
-                     encoded_text, flags=re.DOTALL | re.MULTILINE):
+        #import pdb
+        #pdb.set_trace()
+        #encoded_text = b(encoded_text)
+                    
+        if encoded_text.find(b('Character set encoding: ISO-8859-1')) != -1:
+            # encoded_text, flags=re.DOTALL | re.MULTILINE):
             text = encoded_text.decode('ISO-8859-1')
-        elif re.search(
-                r'^Character set encoding: ISO Latin-1',
-                encoded_text, flags=re.DOTALL | re.MULTILINE):
+        elif encoded_text.find(b('Character set encoding: ISO Latin-1')) != -1:
+            #                re.search(
+            #                br'^Character set encoding: ISO Latin-1',
+            #                encoded_text, flags=re.DOTALL | re.MULTILINE):
             text = encoded_text.decode('Latin-1')
         else:
             raise LookupError('Unknown encoding for file {}'.format(filename))
@@ -577,9 +594,17 @@ class Word2Vec(object):
 
 def main():
     """Handle command-line interface."""
+    import os
+    
     from docopt import docopt
 
     arguments = docopt(__doc__)
+    if arguments['--output']:
+        output_filename = arguments['--output']
+        output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
+    else:
+        # stdout
+        output_file = 1
     encoding = arguments['--oe']
     input_encoding = arguments['--ie']
     logging_level = logging.WARN
@@ -587,7 +612,7 @@ def main():
         logging_level = logging.DEBUG
     elif arguments['--verbose']:
         logging_level = logging.INFO
-
+        
     logger = logging.getLogger('dasem.gutenberg')
     logger.setLevel(logging_level)
     logging_handler = logging.StreamHandler()
@@ -600,34 +625,34 @@ def main():
     if arguments['get']:
         gutenberg = Gutenberg()
         text = gutenberg.get_text_by_id(arguments['<id>'])
-        print(text.encode(encoding))
+        write(output_file, text.encode(encoding) + b('\n'))
 
     elif arguments['get-all-sentences']:
         gutenberg = Gutenberg()
         for sentence in gutenberg.iter_sentences():
-            print(sentence.encode(encoding))
+            write(output_file, sentence.encode(encoding) + b('\n'))
 
     elif arguments['get-all-texts']:
         gutenberg = Gutenberg()
         for text in gutenberg.iter_texts():
-            print(text.encode(encoding))
+            write(output_file, text.encode(encoding) + b('\n'))
 
     elif arguments['list-all-ids']:
         gutenberg = Gutenberg()
         ids = gutenberg.get_all_ids()
         for id in ids:
-            print(id)
+            write(output_file, u(id).encode(encoding) + b('\n'))
 
     elif arguments['list']:
         df = get_list_from_wikidata()
-        print(df.to_csv(encoding=encoding))
+        write(output_file, df.to_csv(encoding=encoding))
 
     elif arguments['most-similar']:
         word = arguments['<word>'].decode(input_encoding).lower()
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word)
         for word, similarity in words_and_similarity:
-            print(word.encode(encoding))
+            write(output_file, word.encode(encoding) + b('\n'))
 
     elif arguments['train-and-save-word2vec']:
         word2vec = Word2Vec(autosetup=False)
