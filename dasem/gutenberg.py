@@ -68,7 +68,10 @@ from zipfile import ZipFile
 import gensim
 
 import nltk
+from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
+
+from numpy import zeros
 
 from pandas import DataFrame
 
@@ -187,8 +190,20 @@ def get_text_by_id(id):
 class Gutenberg(object):
     """Gutenberg.
 
-    Encoding
-    --------
+    Attributes
+    ----------
+    logger : logging.Logger
+        Logging object.
+    data_directory : str
+        Top directory where the text are mirrored.
+    whitespaces_pattern : regex pattern
+        Regular expression pattern.
+    word_tokenizer : object with tokenize method
+        Object with tokenize method, corresponding to nltk.WordPunctTokenizer.
+
+    Description
+    -----------
+    In regard to encoding of the Project Gutenberg texts: For instance,
     10218 is encoded in "ISO Latin-1". This is stated with the line
     "Character set encoding: ISO Latin-1" in the header of the data file.
 
@@ -310,12 +325,8 @@ class Gutenberg(object):
                     encoded_text = f.read()
 
         if encoded_text.find(b('Character set encoding: ISO-8859-1')) != -1:
-            # encoded_text, flags=re.DOTALL | re.MULTILINE):
             text = encoded_text.decode('ISO-8859-1')
         elif encoded_text.find(b('Character set encoding: ISO Latin-1')) != -1:
-            #                re.search(
-            #                br'^Character set encoding: ISO Latin-1',
-            #                encoded_text, flags=re.DOTALL | re.MULTILINE):
             text = encoded_text.decode('Latin-1')
         else:
             raise LookupError('Unknown encoding for file {}'.format(filename))
@@ -410,34 +421,37 @@ class Gutenberg(object):
                 yield text
 
 
+class SentenceWordsIterable():
+    """Sentence iterable.
+
+    References
+    ----------
+    https://stackoverflow.com/questions/34166369
+    
+    """
+
+    def __iter__(self):
+        """Restart and return iterable."""
+        gutenberg = Gutenberg()
+        sentences = gutenberg.iter_sentence_words()
+        return sentences
+                
+
 class Word2Vec(object):
     """Gensim Word2vec for Danish Gutenberg corpus.
 
+    Parameters
+    ----------
+    autosetup : bool, optional
+        Determines whether the Word2Vec model should be autoloaded.
+    logging_level : logging.ERROR or other, default logging.WARN
+        Logging level.
+
+    Description
+    -----------
     Trained models can be saved and loaded via the `save` and `load` methods.
 
     """
-
-    class SentenceWords():
-        """Sentence iterable.
-
-        Parameters
-        ----------
-        autosetup : bool, optional
-            Determines whether the Word2Vec model should be autoloaded.
-        logging_level : logging.ERROR or other, default logging.WARN
-            Logging level.
-
-        References
-        ----------
-        https://stackoverflow.com/questions/34166369
-
-        """
-
-        def __iter__(self):
-            """Restart and return iterable."""
-            gutenberg = Gutenberg()
-            sentences = gutenberg.iter_sentence_words()
-            return sentences
 
     def __init__(self, autosetup=True, logging_level=logging.WARN):
         """Setup model."""
@@ -500,7 +514,7 @@ class Word2Vec(object):
             Dimension of the word2vec space.
 
         """
-        sentences = Word2Vec.SentenceWords()
+        sentences = SentenceWordsIterable()
         self.logger.info(
             ('Training word2vec model with parameters: '
              'size={size}, window={window}, '
@@ -586,6 +600,31 @@ class Word2Vec(object):
 
         """
         return self.model.similarity(word1, word2)
+
+    def word_vector(self, word):
+        """Return feature vector for word.
+
+        Parameters
+        ----------
+        word : str
+            Word.
+
+        Returns
+        -------
+        vector : np.array
+            Array will values from Gensim's syn0. If the word is not in the
+            vocabulary, then a zero vector is returned.
+
+        """
+        self.model.init_sims()
+        try:
+            vector = self.model[word]
+
+            # Normalized:
+            # vector = self.model.syn0norm[self.model.vocab[word].index, :]
+        except KeyError:
+            vector = zeros(self.model.vector_size)
+        return vector
 
 
 def main():
