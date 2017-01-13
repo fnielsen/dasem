@@ -114,6 +114,7 @@ def extract_text(text):
     Description
     -----------
     This function attempts to extract the body of the the returned text.
+    The full text contains license information and some header information.
 
     Start:
 
@@ -192,10 +193,13 @@ class Gutenberg(object):
 
     Attributes
     ----------
-    logger : logging.Logger
-        Logging object.
     data_directory : str
         Top directory where the text are mirrored.
+    logger : logging.Logger
+        Logging object.
+    stemmer : object with stem method
+        Object with stem method corresponding to
+        nltk.stem.snowball.DanishStemmer.
     whitespaces_pattern : regex pattern
         Regular expression pattern.
     word_tokenizer : object with tokenize method
@@ -219,7 +223,8 @@ class Gutenberg(object):
         self.whitespaces_pattern = re.compile(
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
-
+        self.stemmer = DanishStemmer()
+        
     def translate_aa(self, text):
         """Translate double-a to 'bolle-aa'.
 
@@ -293,6 +298,8 @@ class Gutenberg(object):
         ----------
         id : str or integer
             Gutenberg ebook identifier.
+        extract_body : bool, default True
+            Extract the body of the downloaded/mirrored Gutenberg raw text.
 
         Returns
         -------
@@ -338,7 +345,8 @@ class Gutenberg(object):
             return text
 
     def iter_sentence_words(
-            self, translate_aa=True, translate_whitespaces=True, lower=True):
+            self, translate_aa=True, translate_whitespaces=True, lower=True,
+            stem=False):
         """Yield list of words from sentences.
 
         Parameters
@@ -349,6 +357,8 @@ class Gutenberg(object):
             Translate multiple whitespaces to single whitespaces
         lower : bool, default True
             Lower case the words.
+        stem : bool, default False
+            Apply word stemming. DanishStemmer from nltk is used.
 
         Yields
         ------
@@ -362,6 +372,13 @@ class Gutenberg(object):
             words = self.word_tokenizer.tokenize(sentence)
             if lower:
                 words = [word.lower() for word in words]
+            if stem == True:
+                words = [self.stemmer.stem(word) for word in words]
+            elif stem == False:
+                pass
+            else:
+                raise ValueError("Wrong argument to 'stem'")
+            
             yield words
 
     def iter_sentences(self, translate_aa=True, translate_whitespaces=True):
@@ -424,16 +441,37 @@ class Gutenberg(object):
 class SentenceWordsIterable():
     """Sentence iterable.
 
+    Parameters
+    ----------
+    translate_aa : bool, default True
+        Translate double-a to 'bolle-aa'.
+    translate_whitespaces : bool, default True
+        Translate multiple whitespaces to single whitespaces
+    lower : bool, default True
+        Lower case the words.
+    stem : bool, default False
+        Apply word stemming. DanishStemmer from nltk is used.
+
     References
     ----------
     https://stackoverflow.com/questions/34166369
     
     """
 
+    def __init__(self, translate_aa=True, translate_whitespaces=True,
+                 lower=True, stem=False):
+        self.translate_aa = translate_aa
+        self.translate_whitespaces = translate_whitespaces
+        self.lower = lower
+        self.stem = stem
+
     def __iter__(self):
         """Restart and return iterable."""
         gutenberg = Gutenberg()
-        sentences = gutenberg.iter_sentence_words()
+        sentences = gutenberg.iter_sentence_words(
+            translate_aa=self.translate_aa,
+            translate_whitespaces=self.translate_whitespaces,
+            lower=self.lower, stem=self.stem)
         return sentences
                 
 
@@ -505,16 +543,36 @@ class Word2Vec(object):
         full_filename = self.full_filename(filename)
         self.model.save(full_filename)
 
-    def train(self, size=100, window=5, min_count=5, workers=4):
+    def train(self, size=100, window=5, min_count=5, workers=4,
+              translate_aa=True, translate_whitespaces=True, lower=True,
+              stem=False):
         """Train Gensim Word2Vec model.
 
         Parameters
         ----------
         size : int, default 100
-            Dimension of the word2vec space.
+            Dimension of the word2vec space. Gensim Word2Vec parameter.
+        window : int, default 5
+            Word window size. Gensim Word2Vec parameter.
+        min_count : int, default 5
+            Minimum number of times a word must occure to be included in the
+            model. Gensim Word2Vec parameter.
+        workers : int, default 4
+            Number of Gensim workers.
+        translate_aa : bool, default True
+            Translate double-a to 'bolle-aa'.
+        translate_whitespaces : bool, default True
+            Translate multiple whitespaces to single whitespaces
+        lower : bool, default True
+            Lower case the words.
+        stem : bool, default False
+            Apply word stemming. DanishStemmer from nltk is used.
 
         """
-        sentences = SentenceWordsIterable()
+        sentences = SentenceWordsIterable(
+            translate_aa=translate_aa,
+            translate_whitespaces=translate_whitespaces, lower=lower,
+            stem=stem)
         self.logger.info(
             ('Training word2vec model with parameters: '
              'size={size}, window={window}, '
