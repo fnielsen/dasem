@@ -759,7 +759,11 @@ class ExplicitSemanticAnalysis(object):
 
 
 class Word2Vec(object):
-    """Gensim Word2vec for Danish Wikipedia corpus."""
+    """Gensim Word2vec for Danish Wikipedia corpus.
+
+    Trained models can be saved and loaded via the `save` and `load` methods.
+
+    """
 
     class Sentences():
         """Sentence iterable.
