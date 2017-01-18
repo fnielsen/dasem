@@ -456,6 +456,7 @@ class SentenceWordsIterable():
 
     def __init__(self, translate_aa=True, translate_whitespaces=True,
                  lower=True, stem=False):
+        """Setup options."""
         self.translate_aa = translate_aa
         self.translate_whitespaces = translate_whitespaces
         self.lower = lower
