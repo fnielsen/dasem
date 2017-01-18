@@ -1,3 +1,4 @@
+beautifulsoup4
 db.py
 docopt
 flask
