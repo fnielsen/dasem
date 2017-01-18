@@ -224,7 +224,7 @@ class Gutenberg(object):
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
-        
+
     def translate_aa(self, text):
         """Translate double-a to 'bolle-aa'.
 
@@ -372,13 +372,9 @@ class Gutenberg(object):
             words = self.word_tokenizer.tokenize(sentence)
             if lower:
                 words = [word.lower() for word in words]
-            if stem == True:
+            if stem:
                 words = [self.stemmer.stem(word) for word in words]
-            elif stem == False:
-                pass
-            else:
-                raise ValueError("Wrong argument to 'stem'")
-            
+
             yield words
 
     def iter_sentences(self, translate_aa=True, translate_whitespaces=True):
@@ -455,7 +451,7 @@ class SentenceWordsIterable():
     References
     ----------
     https://stackoverflow.com/questions/34166369
-    
+
     """
 
     def __init__(self, translate_aa=True, translate_whitespaces=True,
@@ -473,7 +469,7 @@ class SentenceWordsIterable():
             translate_whitespaces=self.translate_whitespaces,
             lower=self.lower, stem=self.stem)
         return sentences
-                
+
 
 class Word2Vec(object):
     """Gensim Word2vec for Danish Gutenberg corpus.
@@ -752,6 +748,7 @@ def main():
         word2vec.train()
         logger.info('Saving word2vec model')
         word2vec.save()
+
 
 if __name__ == '__main__':
     main()
