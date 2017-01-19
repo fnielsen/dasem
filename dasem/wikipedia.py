@@ -6,6 +6,8 @@ Usage:
   dasem.wikipedia category-graph | count-category-pages
   dasem.wikipedia count-pages | count-pages-per-user
   dasem.wikipedia article-link-graph [options]
+  dasem.wikipedia get-all-article-sentences
+  dasem.wikipedia get-all-stripped-article-texts
   dasem.wikipedia iter-pages | iter-article-words [options]
   dasem.wikipedia doc-term-matrix [options]
   dasem.wikipedia save-tfidf-vectorizer [options]
@@ -13,7 +15,6 @@ Usage:
 Options:
   -h --help            Help
   -v --verbose         Verbose messages
-  --display
   --max-n-pages=<int>  Maximum number of pages to iterate over
   --filename=<str>     Filename
 
@@ -56,8 +57,6 @@ import numpy as np
 from scipy.sparse import lil_matrix
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-from tqdm import tqdm
 
 from .config import data_directory
 from .text import sentence_tokenize, word_tokenize
@@ -305,7 +304,7 @@ class XmlDumpFile(object):
                 counts[page['ip']] += 1
         return counts
 
-    def iter_article_pages(self, max_n_pages=None, display=False):
+    def iter_article_pages(self, max_n_pages=None):
         """Iterate over article pages.
 
         Parameters
@@ -319,22 +318,38 @@ class XmlDumpFile(object):
 
         """
         n = 0
-        for page in tqdm(self.iter_pages(), disable=not display):
+        for page in self.iter_pages():
             if page['ns'] == '0':
                 n += 1
                 yield page
                 if max_n_pages is not None and n >= max_n_pages:
                     break
 
-    def iter_article_sentences(self, max_n_pages=None, display=False):
+    def iter_stripped_article_texts(self, max_n_pages=None):
+        """Iterate over article page text.
+
+        Parameters
+        ----------
+        max_n_pages : int or None
+            Maximum number of pages to return.
+
+        Yields
+        ------
+        text : str
+            Text.
+
+        """
+        for page in self.iter_article_pages(max_n_pages=max_n_pages):
+            text = mwparserfromhell.parse(page['text'])
+            yield text.strip_code()
+
+    def iter_article_sentences(self, max_n_pages=None):
         """Iterate over article sentences.
 
         Parameters
         ----------
         max_n_pages : int or None, optional
             Maximum number of pages to return.
-        display : bool, optional
-            Print iteration feedback information
 
         Yields
         ------
@@ -342,20 +357,13 @@ class XmlDumpFile(object):
             Sentences as strings.
 
         """
-        n = 0
-        for article in tqdm(self.iter_article_pages(
-                max_n_pages=max_n_pages, display=display),
-                         disable=not display):
-            n += 1
-            text = mwparserfromhell.parse(article['text'])
-            sentences = sentence_tokenize(text.strip_code())
+        for text in self.iter_stripped_article_texts(max_n_pages=max_n_pages):
+            sentences = sentence_tokenize(text)
             for sentence in sentences:
                 yield sentence
-            if max_n_pages is not None and n >= max_n_pages:
-                break
 
     def iter_article_sentence_words(
-            self, lower=True, max_n_pages=None, display=False):
+            self, lower=True, max_n_pages=None):
         """Iterate over article sentences.
 
         Parameters
@@ -364,8 +372,6 @@ class XmlDumpFile(object):
             Lower case words
         max_n_pages : int or None, optional
             Maximum number of pages to return.
-        display : bool, optional
-            Print iteration feedback information
 
         Yields
         ------
@@ -373,22 +379,12 @@ class XmlDumpFile(object):
             Sentences as list of words represented as strings.
 
         """
-        n = 0
-        for article in tqdm(self.iter_article_pages(
-                max_n_pages=max_n_pages, display=display),
-                         disable=not display):
-            n += 1
-            text = mwparserfromhell.parse(article['text'])
-            sentences = sentence_tokenize(text.strip_code())
-            for sentence in sentences:
-                tokens = word_tokenize(sentence)
-                if lower:
-                    yield [token.lower() for token in tokens]
-                else:
-                    yield tokens
-
-            if max_n_pages is not None and n >= max_n_pages:
-                break
+        for sentence in self.iter_article_sentences(max_n_pages=max_n_pages):
+            tokens = word_tokenize(sentence)
+            if lower:
+                yield [token.lower() for token in tokens]
+            else:
+                yield tokens
 
     def iter_article_title_and_words(self, max_n_pages=None):
         """Iterate over articles returning word list.
@@ -673,13 +669,11 @@ class ExplicitSemanticAnalysis(object):
 
         self._titles = [
             page['title'] for page in self._dump_file.iter_article_pages(
-                max_n_pages=max_n_pages,
-                display=display)]
+                max_n_pages=max_n_pages)]
 
         texts = (page['text']
                  for page in self._dump_file.iter_article_pages(
-                         max_n_pages=max_n_pages,
-                         display=display))
+                         max_n_pages=max_n_pages))
 
         self.logger.info('TFIDF vectorizing')
         self._transformer = TfidfVectorizer(
@@ -785,8 +779,7 @@ class Word2Vec(object):
             dump_file = XmlDumpFile()
             sentences = dump_file.iter_article_sentence_words(
                 lower=self.lower,
-                max_n_pages=self.max_n_pages,
-                display=self.display)
+                max_n_pages=self.max_n_pages)
             return sentences
 
     def __init__(self, autosetup=True, logging_level=logging.WARN):
@@ -1121,7 +1114,6 @@ def main():
     from docopt import docopt
 
     arguments = docopt(__doc__)
-    display = arguments['--display']
     if arguments['--max-n-pages'] is None:
         max_n_pages = None
     else:
@@ -1156,9 +1148,17 @@ def main():
         count = dump_file.count_category_pages()
         print(count)
 
+    elif arguments['get-all-stripped-article-texts']:
+        for text in dump_file.iter_stripped_article_texts():
+            print(text)
+
+    elif arguments['get-all-article-sentences']:
+        for sentence in dump_file.iter_article_sentences():
+            print(sentence)
+
     elif arguments['iter-article-words']:
         for title, words in dump_file.iter_article_title_and_words(
-                max_n_pages=int(arguments['--max-n-pages'])):
+                max_n_pages=max_n_pages):
             print(json.dumps([title, words]))
 
     elif arguments['doc-term-matrix']:
@@ -1176,25 +1176,22 @@ def main():
             filename = TFIDF_VECTORIZER_FILENAME
 
         texts = (page['text'] for page in dump_file.iter_article_pages(
-            max_n_pages=max_n_pages,
-            display=display))
+            max_n_pages=max_n_pages))
 
         # Cannot unzip the iterator
         titles = [page['title']
                   for page in dump_file.iter_article_pages(
-                          max_n_pages=max_n_pages,
-                          display=display)]
+                          max_n_pages=max_n_pages)]
 
-        if display:
-            tqdm.write('TFIDF vectorizing')
         transformer = TfidfVectorizer()
         transformer.fit(texts)
         transformer.rows = titles
 
-        if display:
-            tqdm.write('Writing tfidf vectorizer to {}'.format(filename))
         with codecs.open(filename, 'w', encoding='utf-8') as f:
             f.write(jsonpickle.encode(transformer))
+
+    else:
+        assert False
 
 
 if __name__ == '__main__':
