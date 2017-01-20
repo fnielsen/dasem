@@ -15,8 +15,10 @@ Usage:
 Options:
   -h --help            Help
   -v --verbose         Verbose messages
-  --max-n-pages=<int>  Maximum number of pages to iterate over
   --filename=<str>     Filename
+  --max-n-pages=<int>  Maximum number of pages to iterate over
+  --oe=encoding       Output encoding [default: utf-8]
+  -o --output=<file>  Output filename, default output to stdout
 
 """
 
@@ -30,9 +32,12 @@ from collections import Counter
 
 import logging
 
+from os import write
 import os.path
 
 import re
+
+from six import b
 
 import json
 
@@ -1114,6 +1119,13 @@ def main():
     from docopt import docopt
 
     arguments = docopt(__doc__)
+    if arguments['--output']:
+        output_filename = arguments['--output']
+        output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
+    else:
+        # stdout
+        output_file = 1
+    encoding = arguments['--oe']
     if arguments['--max-n-pages'] is None:
         max_n_pages = None
     else:
@@ -1154,7 +1166,7 @@ def main():
 
     elif arguments['get-all-article-sentences']:
         for sentence in dump_file.iter_article_sentences():
-            print(sentence)
+            write(output_file, sentence.encode(encoding) + b('\n'))
 
     elif arguments['iter-article-words']:
         for title, words in dump_file.iter_article_title_and_words(
