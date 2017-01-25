@@ -8,15 +8,17 @@ Usage:
   dasem.lcc get-sentence-words-from-file [options] <file>
   dasem.lcc get-sentences [options]
   dasem.lcc get-sentences-from-file <file>
+  dasem.lcc most-similar [options] <word>
   dasem.lcc train-and-save-word2vec [options]
 
 Options:
-  --debug             Debug messages
+  --debug             Debug messages.
   -h --help           Help message
+  --ie=encoding     Input encoding [default: utf-8]
   --oe=encoding       Output encoding [default: utf-8]
   -o --output=<file>  Output filename, default output to stdout
   --separator=<sep>   Separator [default: |]
-  --verbose           Verbose messages
+  --verbose           Verbose messages.
 
 Examples:
   $ python -m dasem.lcc download-file dan-dk_web_2014_10K.tar.gz
@@ -49,7 +51,6 @@ from six import b, u
 
 import tarfile
 
-import nltk
 from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
 
@@ -142,8 +143,8 @@ class LCCFile(object):
                 words = [self.stemmer.stem(word) for word in words]
 
             yield words
-            if n > 10: break
-                
+
+
 class LCC(object):
     """Leipzig Corpora Collection interface.
 
@@ -155,6 +156,11 @@ class LCC(object):
       on Language Resources and Evaluation, LREC 2006, Genoa, pp. 1799-1802
 
     """
+
+    def __init__(self):
+        """Setup logger."""
+        self.logger = logging.getLogger(__name__ + '.LCC')
+        self.logger.addHandler(logging.NullHandler())
 
     def data_directory(self):
         """Return diretory where data should be.
@@ -232,14 +238,15 @@ class LCC(object):
         for filename in FILENAMES:
             full_filename = join(self.data_directory(), filename)
             lcc_file = LCCFile(full_filename)
+            self.logger.debug('Iterating over sentence words from {}'.format(
+                full_filename))
             for word_list in lcc_file.iter_sentence_words():
                 if lower:
                     word_list = [word.lower() for word in word_list]
                 if stem:
-                    word_list = [self.stemmer.stem(word) for word in word_lits]
+                    word_list = [self.stemmer.stem(word) for word in word_list]
                 yield word_list
 
-                
     def make_data_directory(self):
         """Make data directory for LCC."""
         make_data_directory(data_directory(), 'lcc')
@@ -256,19 +263,19 @@ class SentenceWordsIterable(object):
         Apply word stemming. DanishStemmer from nltk is used.
 
     """
-    
+
     def __init__(self, lower=True, stem=False):
         """Setup options."""
         self.lower = lower
         self.stem = stem
-    
+
     def __iter__(self):
         """Restart and return iterable."""
         lcc = LCC()
         sentences = lcc.iter_sentence_words(
             lower=self.lower, stem=self.stem)
         return sentences
-        
+
 
 class Word2Vec(models.Word2Vec):
 
@@ -315,7 +322,7 @@ def main():
     elif arguments['--verbose']:
         logging_level = logging.INFO
 
-    logger = logging.getLogger('dasem.gutenberg')
+    logger = logging.getLogger()
     logger.setLevel(logging_level)
     logging_handler = logging.StreamHandler()
     logging_handler.setLevel(logging_level)
@@ -331,6 +338,7 @@ def main():
         # stdout
         output_file = 1
     encoding = arguments['--oe']
+    input_encoding = arguments['--ie']
 
     if arguments['data-directory']:
         lcc = LCC()
@@ -393,14 +401,20 @@ def main():
         for sentence in lcc_file.iter_sentences():
             print(sentence)
 
+    elif arguments['most-similar']:
+        word = arguments['<word>'].decode(input_encoding).lower()
+        word2vec = Word2Vec()
+        words_and_similarity = word2vec.most_similar(word)
+        for word, similarity in words_and_similarity:
+            write(output_file, word.encode(encoding) + b('\n'))
+
     elif arguments['train-and-save-word2vec']:
-        print(1)
         word2vec = Word2Vec(autosetup=False)
-        print(2)
+        logger.info('Training word2vec model')
         word2vec.train()
         logger.info('Saving word2vec model')
         word2vec.save()
 
-            
+
 if __name__ == "__main__":
     main()
