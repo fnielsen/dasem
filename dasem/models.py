@@ -12,7 +12,9 @@ import logging
 
 import gensim
 
-from os.path import sep
+from os.path import join, sep
+
+from numpy import zeros
 
 
 WORD2VEC_FILENAME = 'word2vec.pkl.gz'
@@ -36,7 +38,7 @@ class Word2Vec(object):
 
     def __init__(self, autosetup=True, logging_level=logging.WARN):
         """Setup model."""
-        self.logger = logging.getLogger('dasem.models.Word2Vec')
+        self.logger = logging.getLogger(__name__ + '.Word2Vec')
         self.logger.addHandler(logging.NullHandler())
 
         self.model = None
@@ -107,7 +109,7 @@ class Word2Vec(object):
 
         """
         raise NotImplementedError("Define this in derived class")
-        
+
     def train(self, size=100, window=5, min_count=5, workers=4,
               translate_aa=True, translate_whitespaces=True, lower=True,
               stem=False):
@@ -249,11 +251,8 @@ class Word2Vec(object):
 
 def main():
     """Handle command-line interface."""
-    from docopt import docopt
-
-    arguments = docopt(__doc__)
     print('dasem.models')
-    
+
 
 if __name__ == '__main__':
     main()
