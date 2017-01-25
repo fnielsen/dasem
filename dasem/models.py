@@ -36,7 +36,7 @@ class Word2Vec(object):
 
     """
 
-    def __init__(self, autosetup=True, logging_level=logging.WARN):
+    def __init__(self, autosetup=True):
         """Setup model."""
         self.logger = logging.getLogger(__name__ + '.Word2Vec')
         self.logger.addHandler(logging.NullHandler())
@@ -46,8 +46,9 @@ class Word2Vec(object):
             self.logger.info('Autosetup')
             try:
                 self.load()
-            except:
-                self.logger.info('Loading word2vec model failed')
+            except IOError:
+                # The file is probably not there
+                self.logger.info('Loading word2vec model from failed')
                 self.train()
                 self.save()
 
