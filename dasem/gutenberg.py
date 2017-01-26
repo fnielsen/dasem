@@ -490,7 +490,7 @@ class Word2Vec(object):
 
     def __init__(self, autosetup=True, logging_level=logging.WARN):
         """Setup model."""
-        self.logger = logging.getLogger('dasem.gutenberg.Word2Vec')
+        self.logger = logging.getLogger(__name__ + '.Word2Vec')
         self.logger.addHandler(logging.NullHandler())
 
         self.model = None
@@ -703,7 +703,7 @@ def main():
     elif arguments['--verbose']:
         logging_level = logging.INFO
 
-    logger = logging.getLogger('dasem.gutenberg')
+    logger = logging.getLogger()
     logger.setLevel(logging_level)
     logging_handler = logging.StreamHandler()
     logging_handler.setLevel(logging_level)
