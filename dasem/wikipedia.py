@@ -10,15 +10,18 @@ Usage:
   dasem.wikipedia get-all-stripped-article-texts
   dasem.wikipedia iter-pages | iter-article-words [options]
   dasem.wikipedia doc-term-matrix [options]
+  dasem.wikipedia most-similar [options] <word>
   dasem.wikipedia save-tfidf-vectorizer [options]
 
 Options:
   -h --help            Help
-  -v --verbose         Verbose messages
+  --debug              Debug messages
   --filename=<str>     Filename
+  --ie=encoding     Input encoding [default: utf-8]
   --max-n-pages=<int>  Maximum number of pages to iterate over
-  --oe=encoding       Output encoding [default: utf-8]
-  -o --output=<file>  Output filename, default output to stdout
+  --oe=encoding        Output encoding [default: utf-8]
+  -o --output=<file>   Output filename, default output to stdout
+  -v --verbose         Verbose messages
 
 """
 
@@ -32,8 +35,9 @@ from collections import Counter
 
 import logging
 
+import os
 from os import write
-import os.path
+from os.path import join, sep
 
 import re
 
@@ -65,6 +69,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .config import data_directory
 from .text import sentence_tokenize, word_tokenize
+from . import models
 
 
 jsonpickle_numpy.register_handlers()
@@ -75,8 +80,6 @@ BZ2_XML_DUMP_FILENAME = 'dawiki-20160901-pages-articles.xml.bz2'
 DOC2VEC_FILENAME = 'wikipedia-doc2vec.pkl.gz'
 
 TFIDF_VECTORIZER_FILENAME = 'wikipedia-tfidfvectorizer.json'
-
-WORD2VEC_FILENAME = 'wikipedia-word2vec.pkl.gz'
 
 ESA_PKL_FILENAME = 'wikipedia-esa.pkl.gz'
 
@@ -184,8 +187,7 @@ class XmlDumpFile(object):
 
     """
 
-    def __init__(self, filename=BZ2_XML_DUMP_FILENAME,
-                 logging_level=logging.WARN):
+    def __init__(self, filename=BZ2_XML_DUMP_FILENAME):
         """Prepare dump file for reading.
 
         Parameters
@@ -196,7 +198,6 @@ class XmlDumpFile(object):
         """
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logging_level)
 
         full_filename = self.full_filename(filename)
         self.filename = full_filename
@@ -211,10 +212,10 @@ class XmlDumpFile(object):
 
     def full_filename(self, filename):
         """Return filename with full filename path."""
-        if os.path.sep in filename:
+        if sep in filename:
             return filename
         else:
-            return os.path.join(data_directory(), 'wikipedia', filename)
+            return join(data_directory(), 'wikipedia', filename)
 
     def clean_tag(self, tag):
         """Remove namespace from tag.
@@ -562,8 +563,7 @@ class ExplicitSemanticAnalysis(object):
 
     def __init__(
             self, autosetup=True, stop_words=None, norm='l2', use_idf=True,
-            sublinear_tf=False, max_n_pages=None, display=False,
-            logging_level=logging.WARN):
+            sublinear_tf=False, max_n_pages=None, display=False):
         """Setup model.
 
         Several of the parameters are piped further on to sklearns
@@ -581,7 +581,6 @@ class ExplicitSemanticAnalysis(object):
         """
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logging_level)
 
         if autosetup:
             self.logger.info('Trying to load pickle files')
@@ -596,10 +595,10 @@ class ExplicitSemanticAnalysis(object):
 
     def full_filename(self, filename):
         """Return filename with full filename path."""
-        if os.path.sep in filename:
+        if sep in filename:
             return filename
         else:
-            return os.path.join(data_directory(), 'models', filename)
+            return join(data_directory(), 'models', filename)
 
     def save_json(self, filename=ESA_JSON_FILENAME, display=False):
         """Save parameter to JSON file."""
@@ -757,185 +756,74 @@ class ExplicitSemanticAnalysis(object):
         return [phrases[idx] for idx in indices]
 
 
-class Word2Vec(object):
+class SentenceWordsIterable(object):
+    """Iterable for words in a sentence.
+
+    Parameters
+    ----------
+    lower : bool, default True
+        Lower case the words.
+    stem : bool, default False
+        Apply word stemming. DanishStemmer from nltk is used.
+
+    References
+    ----------
+    https://stackoverflow.com/questions/34166369
+
+    """
+
+    def __init__(self, lower=True, stem=False, max_n_pages=None):
+        """Setup options."""
+        self.lower = lower
+        self.max_n_pages = max_n_pages
+        self.stem = stem
+
+    def __iter__(self):
+        """Restart and return iterable."""
+        dump_file = XmlDumpFile()
+        sentences = dump_file.iter_article_sentence_words(
+            lower=self.lower,
+            max_n_pages=self.max_n_pages)
+        return sentences
+
+
+class Word2Vec(models.Word2Vec):
     """Gensim Word2vec for Danish Wikipedia corpus.
 
     Trained models can be saved and loaded via the `save` and `load` methods.
 
     """
 
-    class Sentences():
-        """Sentence iterable.
-
-        References
-        ----------
-        https://stackoverflow.com/questions/34166369
-
-        """
-
-        def __init__(self, lower=True, max_n_pages=None, display=False):
-            """Setup parameters."""
-            self.lower = lower
-            self.max_n_pages = max_n_pages
-            self.display = display
-
-        def __iter__(self):
-            """Restart and return iterable."""
-            dump_file = XmlDumpFile()
-            sentences = dump_file.iter_article_sentence_words(
-                lower=self.lower,
-                max_n_pages=self.max_n_pages)
-            return sentences
-
-    def __init__(self, autosetup=True, logging_level=logging.WARN):
-        """Setup model.
-
-        Parameters
-        ----------
-        autosetup : bool, optional
-            Determines whether the Word2Vec model should be autoloaded.
-
-        """
-        self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logging_level)
-
-        self.model = None
-        if autosetup:
-            try:
-                self.load()
-            except:
-                self.train()
-                self.save()
-
-    def full_filename(self, filename):
-        """Return filename with full filename path."""
-        if os.path.sep in filename:
-            return filename
-        else:
-            return os.path.join(data_directory(), 'models', filename)
-
-    def load(self, filename=WORD2VEC_FILENAME):
-        """Load model from pickle file.
-
-        This function is unsafe. Do not load unsafe files.
-
-        Parameters
-        ----------
-        filename : str
-            Filename of pickle file.
-
-        """
-        full_filename = self.full_filename(filename)
-        self.logger.info('Loading word2vec model from {}'.format(
-            full_filename))
-        self.model = gensim.models.Word2Vec.load(full_filename)
-
-    def save(self, filename=WORD2VEC_FILENAME):
-        """Save model to pickle file.
-
-        The Gensim load file is used which can also compress the file.
-
-        Parameters
-        ----------
-        filename : str, optional
-            Filename.
-
-        """
-        full_filename = self.full_filename(filename)
-        self.model.save(full_filename)
-
-    def train(self, size=100, window=5, min_count=5, workers=4,
-              max_n_pages=None, display=False):
-        """Train Gensim Word2Vec model.
-
-        Parameters
-        ----------
-        size : int, optional
-            Dimension of the word2vec space.
-
-        """
-        sentences = Word2Vec.Sentences(
-            max_n_pages=max_n_pages, display=display)
-        self.model = gensim.models.Word2Vec(
-            sentences, size=size, window=window, min_count=min_count,
-            workers=workers)
-
-    def doesnt_match(self, words):
-        """Return odd word of list.
-
-        This method forward the matching to the `doesnt_match` method in the
-        Word2Vec class of Gensim.
-
-        Parameters
-        ----------
-        words : list of str
-            List of words represented as strings.
+    def data_directory(self):
+        """Return data directory.
 
         Returns
         -------
-        word : str
-            Outlier word.
-
-        Examples
-        --------
-        >>> w2v = Word2Vec()
-        >>> w2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
-        'stol'
+        dir : str
+            Directory for data.
 
         """
-        return self.model.doesnt_match(words)
+        dir = join(data_directory(), 'wikipedia')
+        return dir
 
-    def most_similar(self, positive=[], negative=[], topn=10,
-                     restrict_vocab=None, indexer=None):
-        """Return most similar words.
-
-        This method will forward the similarity search to the `most_similar`
-        method in the Word2Vec class in Gensim. The input parameters and
-        returned result are the same.
+    def iterable_sentence_words(self, lower=True, stem=False):
+        """Returns iterable for sentence words.
 
         Parameters
         ----------
-        positive : list of str
-            List of strings with words to include for similarity search.
-        negative : list of str
-            List of strings with words to discount.
-        topn : int
-            Number of words to return
+        lower : bool, default True
+            Lower case the words.
+        stem : bool, default False
+            Apply word stemming. DanishStemmer from nltk is used.
 
         Returns
         -------
-        words : list of tuples
-            List of 2-tuples with word and similarity.
-
-        Examples
-        --------
-        >>> w2v = Word2Vec()
-        >>> words = w2v.most_similar('studieretning')
-        >>> len(words)
-        10
+        sentence_words : iterable
+            Iterable over sentence words
 
         """
-        return self.model.most_similar(
-            positive, negative, topn, restrict_vocab, indexer)
-
-    def similarity(self, word1, word2):
-        """Return value for similarity between two words.
-
-        Parameters
-        ----------
-        word1 : str
-            First word to be compared
-        word2 : str
-            Second word.
-
-        Returns
-        -------
-        value : float
-            Similarity as a float value between 0 and 1.
-
-        """
-        return self.model.similarity(word1, word2)
+        sentence_words = SentenceWordsIterable(lower=lower, stem=stem)
+        return sentence_words
 
 
 class Doc2Vec(object):
@@ -963,7 +851,7 @@ class Doc2Vec(object):
                 max_n_pages=self.max_n_pages)
             return words
 
-    def __init__(self, autosetup=True, logging_level=logging.WARN):
+    def __init__(self, autosetup=True):
         """Setup model.
 
         Parameters
@@ -974,7 +862,6 @@ class Doc2Vec(object):
         """
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logging_level)
 
         self.model = None
         if autosetup:
@@ -986,10 +873,10 @@ class Doc2Vec(object):
 
     def full_filename(self, filename):
         """Return filename with full filename path."""
-        if os.path.sep in filename:
+        if sep in filename:
             return filename
         else:
-            return os.path.join(data_directory(), 'models', filename)
+            return join(data_directory(), 'models', filename)
 
     def load(self, filename=DOC2VEC_FILENAME):
         """Load model from pickle file.
@@ -1119,6 +1006,22 @@ def main():
     from docopt import docopt
 
     arguments = docopt(__doc__)
+
+    logging_level = logging.WARN
+    if arguments['--debug']:
+        logging_level = logging.DEBUG
+    elif arguments['--verbose']:
+        logging_level = logging.INFO
+
+    logger = logging.getLogger()
+    logger.setLevel(logging_level)
+    logging_handler = logging.StreamHandler()
+    logging_handler.setLevel(logging_level)
+    logging_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_handler.setFormatter(logging_formatter)
+    logger.addHandler(logging_handler)
+
     if arguments['--output']:
         output_filename = arguments['--output']
         output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
@@ -1126,11 +1029,12 @@ def main():
         # stdout
         output_file = 1
     encoding = arguments['--oe']
+    input_encoding = arguments['--ie']
+
     if arguments['--max-n-pages'] is None:
         max_n_pages = None
     else:
         max_n_pages = int(arguments['--max-n-pages'])
-    verbose = arguments['--verbose']
 
     dump_file = XmlDumpFile()
 
@@ -1148,8 +1052,7 @@ def main():
             print(u"{:4} {:6} {}".format(n, count, user))
 
     elif arguments['article-link-graph']:
-        graph = dump_file.article_link_graph(
-            verbose=verbose)
+        graph = dump_file.article_link_graph()
         print(graph)
 
     elif arguments['category-graph']:
@@ -1175,11 +1078,17 @@ def main():
 
     elif arguments['doc-term-matrix']:
         matrix, rows, columns = dump_file.doc_term_matrix(
-            max_n_pages=int(arguments['--max-n-pages']),
-            verbose=arguments['--verbose'])
+            max_n_pages=int(arguments['--max-n-pages']))
         print(matrix)
         # df = DataFrame(matrix, index=rows, columns=columns)
         # print(df.to_csv(encoding='utf-8'))
+
+    elif arguments['most-similar']:
+        word = arguments['<word>'].decode(input_encoding).lower()
+        word2vec = Word2Vec()
+        words_and_similarity = word2vec.most_similar(word)
+        for word, similarity in words_and_similarity:
+            write(output_file, word.encode(encoding) + b('\n'))
 
     elif arguments['save-tfidf-vectorizer']:
         if arguments['--filename']:
