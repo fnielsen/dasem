@@ -22,10 +22,10 @@ if not app.debug:
     logging.basicConfig()
 
 app.logger.info('Setting up datasets')
-app.dasem_dannet = Dannet(logging_level=logging_level)
-app.dasem_wikipedia_esa = ExplicitSemanticAnalysis(logging_level=logging_level)
-app.dasem_wikipedia_w2v = Word2Vec(logging_level=logging_level)
-app.dasem_eparole = EParole(logging_level=logging_level)
+app.dasem_dannet = Dannet()
+app.dasem_wikipedia_esa = ExplicitSemanticAnalysis()
+app.dasem_wikipedia_w2v = Word2Vec()
+app.dasem_eparole = EParole()
 app.logger.info('Datasets loaded')
 
 from . import views
