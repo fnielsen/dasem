@@ -47,7 +47,7 @@ import requests
 
 from shutil import copyfileobj
 
-from six import b, u
+from six import b, text_type, u
 
 import tarfile
 
@@ -402,7 +402,10 @@ def main():
             print(sentence)
 
     elif arguments['most-similar']:
-        word = arguments['<word>'].decode(input_encoding).lower()
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding)
+        word = word.lower()
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word)
         for word, similarity in words_and_similarity:
