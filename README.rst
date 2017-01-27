@@ -37,3 +37,11 @@ Get similar words based on a word2vec model on the Danish part of the Project Gu
     profet
     hund
     person
+    
+Get first two sentences from Dannet synsets examples:
+
+.. code-block:: bash
+
+    $ python -m dasem.dannet get-all-sentences | head -n 2
+    I september måned var jeg sammen med en dansk gruppe af unge bøsser og lesbiske i Moskva
+    Til en gruppe på 10 børn i alderen 0-3 år søges pr. 1.3.83 en pædagog 40 timer ugentligt
