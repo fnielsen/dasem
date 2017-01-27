@@ -1,51 +1,33 @@
 """dasem.dannet.
 
 Usage:
-  dasem.dannet show <dataset>
   dasem.dannet build-sqlite-database [options]
+  dasem.dannet get-all-sentences [options]
+  dasem.dannet show <dataset>
 
 Options:
   --debug       Debug messages
   -h --help     Help message
+  --oe=encoding       Output encoding [default: utf-8]
+  -o --output=<file>  Output filename, default output to stdout
   -v --verbose  Verbose informational messages
 
+Description:
+  This module handles DanNet, the Danish wordnet.
 
-Description
------------
+  words.csv:
+     3-columns: (id, form, pos), e.g., (50001462, druemost, Noun)
+     The id is found in the wordsenses.csv. It is for the lexical entry
 
-This module handles DanNet, the Danish wordnet.
+  wordsenses.csv:
+     4-columns (wordsense_id, word_id, synset_id, ?), e.g.,
+     (22005172, 50001462, 66967, )
 
+  For instance, relations.csv describes 2355 (gruppe_1; samling_3) as being a
+  hyponym of 20633 (DN:TOP) and synonym of WordNet's ENG20-08119921-n.
 
-words.csv:
-   3-columns: (id, form, pos), e.g., (50001462, druemost, Noun)
-   The id is found in the wordsenses.csv. It is for the lexical entry
-
-wordsenses.csv:
-   4-columns (wordsense_id, word_id, synset_id, ?), e.g.,
-   (22005172, 50001462, 66967, )
-
-
-For instance, relations.csv describes 2355 (gruppe_1; samling_3) as being a
-hyponym of 20633 (DN:TOP) and synonym of WordNet's ENG20-08119921-n.
-
-
-Examples
---------
->>> # Danish nouns
->>> dannet = Dannet()
->>> query = "select w.form from words w where w.pos = 'Noun'"
->>> nouns = set(dannet.db.query(query).form)
->>> 'guitar' in nouns
-True
->>> 'guitaren' in nouns
-False
->>> len(nouns)
-48404
-
-
-References
-----------
-http://wordnet.dk/
+References:
+  http://wordnet.dk/
 
 """
 
@@ -56,9 +38,13 @@ import csv
 
 import logging
 
+import os
+from os import write
 from os.path import join, sep, splitext
 
-import sys
+import re
+
+from six import b
 
 import sqlite3
 
@@ -109,11 +95,22 @@ class Dannet(object):
     >>> 'bil' in dannet.db.query(query).gloss[0]
     True
 
+    >>> # Danish nouns
+    >>> dannet = Dannet()
+    >>> query = "select w.form from words w where w.pos = 'Noun'"
+    >>> nouns = set(dannet.db.query(query).form)
+    >>> 'guitar' in nouns
+    True
+    >>> 'guitaren' in nouns
+    False
+    >>> len(nouns)
+    48404
+
     """
 
     def __init__(self, logging_level=logging.WARN):
         """Initialize logger and and database."""
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__ + '.Dannet')
         self.logger.addHandler(logging.NullHandler())
         self.logger.setLevel(logging_level)
 
@@ -153,6 +150,33 @@ class Dannet(object):
             return filename
         else:
             return join(data_directory(), 'dannet', filename)
+
+    def iter_sentences(self):
+        """Iterate over sentences in the synsets examples.
+
+        The synsets definitions have examples of word usages. There might be
+        several examples for some synsets. This function iterates over all the
+        sentences.
+
+        Yields
+        ------
+        sentence : str
+            Sentence.
+
+        """
+        use_pattern = re.compile(r'\(Brug: (".+?")\)', flags=re.UNICODE)
+        quote_pattern = re.compile(r'"(.+?)"(?:; "(.+?)")*', flags=re.UNICODE)
+        synsets = self.read_synsets()
+        self.logger.debug('Iterating over sentences')
+        for gloss in synsets.gloss:
+            use_matches = use_pattern.findall(gloss)
+            if use_matches:
+                quote_matches = quote_pattern.findall(use_matches[0])
+                for parts in quote_matches[0]:
+                    sentences = parts.split(' || ')
+                    for sentence in sentences:
+                        if sentence:
+                            yield sentence.replace('[', '').replace(']', '')
 
     def read_zipped_csv_file(self, filename, zip_filename=DANNET_FILENAME):
         """Read a zipped csv DanNet file.
@@ -319,20 +343,31 @@ def main():
     """Handle command-line input."""
     from docopt import docopt
 
-    logging.basicConfig()
-
     arguments = docopt(__doc__)
-
-    encoding = sys.stdout.encoding
-    if not encoding:
-        # In Python2 sys.stdout.encoding is set to None for piped output
-        encoding = 'utf-8'
 
     logging_level = logging.WARN
     if arguments['--verbose']:
         logging_level = logging.INFO
     if arguments['--debug']:
         logging_level = logging.DEBUG
+
+    logger = logging.getLogger()
+    logger.setLevel(logging_level)
+    logging_handler = logging.StreamHandler()
+    logging_handler.setLevel(logging_level)
+    logging_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_handler.setFormatter(logging_formatter)
+    logger.addHandler(logging_handler)
+
+    if arguments['--output']:
+        output_filename = arguments['--output']
+        output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
+        logger.debug('Writing to file {}'.format(output_filename))
+    else:
+        # stdout
+        output_file = 1
+    output_encoding = arguments['--oe']
 
     dannet = Dannet(logging_level=logging_level)
 
@@ -349,10 +384,14 @@ def main():
             dataset = dannet.read_wordsenses()
         else:
             raise ValueError('Wrong <dataset>')
-        print(dataset.to_csv(encoding=encoding, index=False))
+        print(dataset.to_csv(encoding=output_encoding, index=False))
 
     elif arguments['build-sqlite-database']:
         dannet.build_sqlite_database()
+
+    elif arguments['get-all-sentences']:
+        for sentence in dannet.iter_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
 
 if __name__ == '__main__':
