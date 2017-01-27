@@ -36,6 +36,8 @@ from __future__ import absolute_import, division, print_function
 
 import csv
 
+import errno
+
 import logging
 
 import os
@@ -390,8 +392,15 @@ def main():
         dannet.build_sqlite_database()
 
     elif arguments['get-all-sentences']:
-        for sentence in dannet.iter_sentences():
-            write(output_file, sentence.encode(output_encoding) + b('\n'))
+        try:
+            for sentence in dannet.iter_sentences():
+                write(output_file, sentence.encode(output_encoding) + b('\n'))
+        except Exception as err:
+            if err.errno != errno.EPIPE:
+                raise
+            else:
+                # if piped to the head command
+                pass
 
 
 if __name__ == '__main__':
