@@ -7,7 +7,7 @@ Usage:
 
 Options:
   --debug             Debug messages.
-  --ie=encoding     Input encoding [default: utf-8]
+  --ie=encoding       Input encoding [default: utf-8]
   --oe=encoding       Output encoding [default: utf-8]
   -o --output=<file>  Output filename, default output to stdout
   -h --help
@@ -28,23 +28,28 @@ import os
 from os import write
 from os.path import join
 
+import socket
+
 from six import b, text_type
 
 from . import models
 from .config import data_directory
 from .dannet import Dannet
+from .europarl import Europarl
 from .gutenberg import Gutenberg
 from .lcc import LCC
 from .utils import make_data_directory
 
 
 class Fullmonty(object):
+    """All corpora."""
 
     def __init__(self):
         """Setup objects for corpora."""
         self.dannet = Dannet()
         self.gutenberg = Gutenberg()
         self.lcc = LCC()
+        self.europarl = Europarl()
 
     def iter_sentences(self):
         """Iterate over sentences from all corpora.
@@ -56,10 +61,12 @@ class Fullmonty(object):
 
         """
         dannet_sentences = self.dannet.iter_sentences()
+        europarl_sentences = self.europarl.iter_sentences()
         gutenberg_sentences = self.gutenberg.iter_sentences()
         lcc_sentences = self.lcc.iter_sentences()
 
-        sentences = chain(dannet_sentences, gutenberg_sentences)
+        sentences = chain(dannet_sentences, europarl_sentences,
+                          gutenberg_sentences, lcc_sentences)
         return sentences
 
 
@@ -81,6 +88,7 @@ class SentenceWordsIterable(object):
         self.stem = stem
 
         self.dannet = Dannet()
+        self.europarl = Europarl()
         self.gutenberg = Gutenberg()
         self.lcc = LCC()
 
@@ -88,15 +96,18 @@ class SentenceWordsIterable(object):
         """Restart and return iterable."""
         dannet_sentence_words = self.dannet.iter_sentence_words(
             lower=self.lower, stem=self.stem)
-        
+
+        europarl_sentence_words = self.europarl.iter_sentence_words(
+            lower=self.lower, stem=self.stem)
+
         gutenberg_sentence_words = self.gutenberg.iter_sentence_words(
             lower=self.lower, stem=self.stem)
 
         lcc_sentence_words = self.lcc.iter_sentence_words(
             lower=self.lower, stem=self.stem)
 
-        sentence_words = chain(dannet_sentence_words, gutenberg_sentence_words,
-                               lcc_sentence_words)
+        sentence_words = chain(dannet_sentence_words, europarl_sentence_words,
+                               gutenberg_sentence_words, lcc_sentence_words)
         return sentence_words
 
 
@@ -108,12 +119,12 @@ class Word2Vec(models.Word2Vec):
 
         Returns
         -------
-        dir : str
+        directory : str
             Directory for data.
 
         """
-        dir = join(data_directory(), 'fullmonty')
-        return dir
+        directory = join(data_directory(), 'fullmonty')
+        return directory
 
     def iterable_sentence_words(self, lower=True, stem=False):
         """Return iterable for sentence words.
@@ -135,7 +146,7 @@ class Word2Vec(models.Word2Vec):
         return sentence_words
 
     def make_data_directory(self):
-        """Make data directory for LCC."""
+        """Make data directory for fullmonty."""
         make_data_directory(data_directory(), 'fullmonty')
 
 
@@ -168,14 +179,13 @@ def main():
         output_file = 1
     output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
-    
+
     if arguments['get-all-sentences']:
         fullmonty = Fullmonty()
         try:
             for sentence in fullmonty.iter_sentences():
                 write(output_file, sentence.encode(output_encoding) + b('\n'))
-        except Exception as err:
-            print(err)
+        except socket.error as err:
             if err.errno != errno.EPIPE:
                 raise
             else:
@@ -189,7 +199,7 @@ def main():
         word = word.lower()
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word)
-        for word, similarity in words_and_similarity:
+        for word, _ in words_and_similarity:
             write(output_file, word.encode(output_encoding) + b('\n'))
 
     elif arguments['train-and-save-word2vec']:
@@ -201,6 +211,7 @@ def main():
 
     else:
         assert False
-        
+
+
 if __name__ == "__main__":
     main()
