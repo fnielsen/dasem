@@ -16,6 +16,9 @@ from os.path import join, sep
 
 from numpy import zeros
 
+from .config import data_directory
+from .utils import make_data_directory
+
 
 WORD2VEC_FILENAME = 'word2vec.pkl.gz'
 
@@ -86,6 +89,10 @@ class Word2Vec(object):
             full_filename))
         self.model = gensim.models.Word2Vec.load(full_filename)
 
+    def make_data_directory(self):
+        """Make data directory for LCC."""
+        raise NotImplementedError('Define this in derived class')
+
     def save(self, filename=WORD2VEC_FILENAME):
         """Save model to pickle file.
 
@@ -98,6 +105,7 @@ class Word2Vec(object):
 
         """
         full_filename = self.full_filename(filename)
+        self.make_data_directory()
         self.model.save(full_filename)
 
     def iterable_sentence_words(self):
