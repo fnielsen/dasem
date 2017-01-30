@@ -54,6 +54,9 @@ from zipfile import ZipFile
 
 from db import DB
 
+from nltk.stem.snowball import DanishStemmer
+from nltk.tokenize import WordPunctTokenizer
+
 from pandas import read_csv, DataFrame
 from pandas.io.common import CParserError
 
@@ -116,6 +119,8 @@ class Dannet(object):
         self.logger.addHandler(logging.NullHandler())
         self.logger.setLevel(logging_level)
 
+        self.word_tokenizer = WordPunctTokenizer()
+        
         self._db = None
 
     @property
@@ -179,6 +184,31 @@ class Dannet(object):
                     for sentence in sentences:
                         if sentence:
                             yield sentence.replace('[', '').replace(']', '')
+
+    def iter_sentence_words(self, lower=True, stem=False):
+        """Yield list of words from sentences.
+
+        Parameters
+        ----------
+        lower : bool, default True
+            Lower case the words.
+        stem : bool, default False
+            Apply word stemming. DanishStemmer from nltk is used.
+
+        Yields
+        ------
+        words : list of str
+            List of words
+
+        """
+        for n, sentence in enumerate(self.iter_sentences()):
+            words = self.word_tokenizer.tokenize(sentence)
+            if lower:
+                words = [word.lower() for word in words]
+            if stem:
+                words = [self.stemmer.stem(word) for word in words]
+
+            yield words
 
     def read_zipped_csv_file(self, filename, zip_filename=DANNET_FILENAME):
         """Read a zipped csv DanNet file.
