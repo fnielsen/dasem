@@ -46,11 +46,13 @@ from os.path import join, sep, splitext
 
 import re
 
-from six import b
+import socket
 
 import sqlite3
 
 from zipfile import ZipFile
+
+from six import b
 
 from db import DB
 
@@ -120,7 +122,8 @@ class Dannet(object):
         self.logger.setLevel(logging_level)
 
         self.word_tokenizer = WordPunctTokenizer()
-        
+        self.stemmer = DanishStemmer()
+
         self._db = None
 
     @property
@@ -425,7 +428,7 @@ def main():
         try:
             for sentence in dannet.iter_sentences():
                 write(output_file, sentence.encode(output_encoding) + b('\n'))
-        except Exception as err:
+        except socket.error as err:
             if err.errno != errno.EPIPE:
                 raise
             else:
