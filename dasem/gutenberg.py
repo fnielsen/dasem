@@ -61,6 +61,8 @@ import re
 from os import walk, write
 from os.path import join, sep
 
+import signal
+
 from six import b, u
 
 from zipfile import ZipFile
@@ -200,6 +202,8 @@ class Gutenberg(object):
     stemmer : object with stem method
         Object with stem method corresponding to
         nltk.stem.snowball.DanishStemmer.
+    sentence_tokenizer . object with tokenize method
+        Object with tokenize method for tokenizing a text into sentences.
     whitespaces_pattern : regex pattern
         Regular expression pattern.
     word_tokenizer : object with tokenize method
@@ -214,12 +218,13 @@ class Gutenberg(object):
     """
 
     def __init__(self):
-        """Setup data directory and other constants."""
+        """Setup data directory and other attributes."""
         self.logger = logging.getLogger('dasem.gutenberg.Gutenberg')
         self.logger.addHandler(logging.NullHandler())
 
         self.data_directory = join(data_directory(), 'gutenberg',
                                    'www.gutenberg.lib.md.us')
+        self.sentence_tokenizer = nltk.data.load('tokenizers/punkt/danish.pickle')
         self.whitespaces_pattern = re.compile(
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
@@ -382,14 +387,17 @@ class Gutenberg(object):
 
         The method uses the NLTK Danish sentence tokenizer.
 
-        Yields
-        ------
-        sentence : str
-            String with sentences.
+        Parameters
+        ----------
         translate_aa : bool, default True
             Translate double-aa to bolle-aa.
         translate_whitespaces : book, default True
             Translate multiple whitespaces to a single space.
+
+        Yields
+        ------
+        sentence : str
+            String with sentences.
 
         Examples
         --------
@@ -403,14 +411,12 @@ class Gutenberg(object):
         True
 
         """
-        tokenizer = nltk.data.load('tokenizers/punkt/danish.pickle')
         for text in self.iter_texts(translate_aa=translate_aa):
-            sentences = tokenizer.tokenize(text)
+            sentences = self.sentence_tokenizer.tokenize(text)
             for sentence in sentences:
                 if translate_whitespaces:
-                    yield self.translate_whitespaces(sentence)
-                else:
-                    yield sentence
+                    sentence = self.translate_whitespaces(sentence)
+                yield sentence
 
     def iter_texts(self, translate_aa=True):
         """Yield texts.
@@ -712,6 +718,9 @@ def main():
     logging_handler.setFormatter(logging_formatter)
     logger.addHandler(logging_handler)
 
+    # Ignore broken pipe errors
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
+        
     if arguments['get']:
         gutenberg = Gutenberg()
         text = gutenberg.get_text_by_id(arguments['<id>'])
