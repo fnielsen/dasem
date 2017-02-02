@@ -17,16 +17,13 @@ Options:
 
 from __future__ import absolute_import, division, print_function
 
-import errno
-
 import logging
 
 import os
 from os import write
 from os.path import join
 
-# http://stackoverflow.com/questions/34718208/
-import socket
+import signal
 
 import tarfile
 
@@ -148,30 +145,19 @@ def main():
     encoding = arguments['--oe']
     separator = u(arguments['--separator'])
 
+    # Ignore broken pipe errors
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
+    
     if arguments['get-all-sentence-words']:
         europarl = Europarl()
-        try:
-            for word_list in europarl.iter_sentence_words():
-                write(output_file,
-                      separator.join(word_list).encode(encoding) + b('\n'))
-        except socket.error as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for word_list in europarl.iter_sentence_words():
+            write(output_file,
+                  separator.join(word_list).encode(encoding) + b('\n'))
 
     elif arguments['get-all-sentences']:
         europarl = Europarl()
-        try:
-            for sentence in europarl.iter_sentences():
-                write(output_file, sentence.encode(encoding) + b('\n'))
-        except socket.error as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for sentence in europarl.iter_sentences():
+            write(output_file, sentence.encode(encoding) + b('\n'))
 
     else:
         assert False
