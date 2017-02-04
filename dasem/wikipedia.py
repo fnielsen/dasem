@@ -41,11 +41,17 @@ from os.path import join, sep
 
 import re
 
+import signal
+
 from six import b
 
 import json
 
 import gensim
+
+import nltk
+from nltk.stem.snowball import DanishStemmer
+from nltk.tokenize import WordPunctTokenizer
 
 import gzip
 
@@ -68,7 +74,6 @@ from scipy.sparse import lil_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .config import data_directory
-from .text import sentence_tokenize, word_tokenize
 from . import models
 
 
@@ -202,6 +207,12 @@ class XmlDumpFile(object):
         full_filename = self.full_filename(filename)
         self.filename = full_filename
 
+        self.sentence_tokenizer = nltk.data.load('tokenizers/punkt/danish.pickle')
+        self.whitespaces_pattern = re.compile(
+            '\s+', flags=re.DOTALL | re.UNICODE)
+        self.word_tokenizer = WordPunctTokenizer()
+        self.stemmer = DanishStemmer()
+        
         self.word_pattern = re.compile(
             r"""{{.+?}}|
             <!--.+?-->|
@@ -209,7 +220,18 @@ class XmlDumpFile(object):
             \[\[Kategori:.+?\]\]|
             \[http.+?\]|(\w+(?:-\w+)*)""",
             flags=re.UNICODE | re.VERBOSE | re.DOTALL)
-
+        self.paragraph_split_pattern = re.compile(
+            r'\n\s*\n', flags=re.DOTALL | re.UNICODE)
+        self.ignored_words_pattern = re.compile(
+            r"""
+            (?:(?:thumb|thumbnail|left|right|\d+px|upright(?:=[0-9\.]+)?)\|)+
+            |^\s*\|.+$
+            |^REDIRECT\b""",
+            flags=re.DOTALL | re.UNICODE | re.VERBOSE | re.MULTILINE)
+        self.itemized_split_pattern = re.compile(
+            r"^ |^Kategori:",
+            flags=re.DOTALL | re.UNICODE | re.MULTILINE)
+        
     def full_filename(self, filename):
         """Return filename with full filename path."""
         if sep in filename:
@@ -346,8 +368,19 @@ class XmlDumpFile(object):
 
         """
         for page in self.iter_article_pages(max_n_pages=max_n_pages):
-            text = mwparserfromhell.parse(page['text'])
-            yield text.strip_code()
+            wikicode = mwparserfromhell.parse(page['text'])
+
+            # Make more space for the heading, so it is easier to match as
+            # a separate "sentence".
+            for node in wikicode.ifilter_headings():
+                wikicode.insert_after(node, "\n")
+
+            stripped_text = wikicode.strip_code()
+
+            # Parameters for media content is not stripped by mwparserfromhell
+            stripped_text = self.ignored_words_pattern.sub('', stripped_text)
+            
+            yield stripped_text
 
     def iter_article_sentences(self, max_n_pages=None):
         """Iterate over article sentences.
@@ -364,9 +397,14 @@ class XmlDumpFile(object):
 
         """
         for text in self.iter_stripped_article_texts(max_n_pages=max_n_pages):
-            sentences = sentence_tokenize(text)
-            for sentence in sentences:
-                yield sentence
+            paragraphs = self.paragraph_split_pattern.split(text)
+            for paragraph in paragraphs:
+                sentences = self.sentence_tokenizer.tokenize(paragraph)
+                for sentence in sentences:
+                    parts = self.itemized_split_pattern.split(sentence)
+                    for part in parts:
+                        if part:
+                            yield part.strip()
 
     def iter_article_sentence_words(
             self, lower=True, max_n_pages=None):
@@ -386,7 +424,7 @@ class XmlDumpFile(object):
 
         """
         for sentence in self.iter_article_sentences(max_n_pages=max_n_pages):
-            tokens = word_tokenize(sentence)
+            tokens = self.word_tokenizer.tokenize(sentence)
             if lower:
                 yield [token.lower() for token in tokens]
             else:
@@ -1028,7 +1066,7 @@ def main():
     else:
         # stdout
         output_file = 1
-    encoding = arguments['--oe']
+    output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
     if arguments['--max-n-pages'] is None:
@@ -1036,6 +1074,9 @@ def main():
     else:
         max_n_pages = int(arguments['--max-n-pages'])
 
+    # Ignore broken pipe errors
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
+        
     dump_file = XmlDumpFile()
 
     if arguments['iter-pages']:
@@ -1069,8 +1110,8 @@ def main():
 
     elif arguments['get-all-article-sentences']:
         for sentence in dump_file.iter_article_sentences():
-            write(output_file, sentence.encode(encoding) + b('\n'))
-
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
+                
     elif arguments['iter-article-words']:
         for title, words in dump_file.iter_article_title_and_words(
                 max_n_pages=max_n_pages):
@@ -1088,7 +1129,7 @@ def main():
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word)
         for word, similarity in words_and_similarity:
-            write(output_file, word.encode(encoding) + b('\n'))
+            write(output_file, word.encode(output_encoding) + b('\n'))
 
     elif arguments['save-tfidf-vectorizer']:
         if arguments['--filename']:
