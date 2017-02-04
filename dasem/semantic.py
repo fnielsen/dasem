@@ -7,7 +7,6 @@ Usage:
 
 Options:
   -h --help
-  --display
   --max-n-pages=<int>
 
 """
@@ -21,8 +20,6 @@ from six import print_, u
 import sys
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-from tqdm import tqdm
 
 from .wikipedia import XmlDumpFile
 
@@ -43,7 +40,7 @@ class Semantic(object):
 
     def __init__(
             self, stop_words=None, norm='l2', use_idf=True,
-            sublinear_tf=False, max_n_pages=None, display=False):
+            sublinear_tf=False, max_n_pages=None):
         """Setup model.
 
         Several of the parameters are piped further on to sklearns
@@ -61,27 +58,22 @@ class Semantic(object):
         """
         self.setup_wikipedia_semantics(
             stop_words=None, norm=norm, use_idf=use_idf,
-            sublinear_tf=sublinear_tf, max_n_pages=max_n_pages,
-            display=display)
+            sublinear_tf=sublinear_tf, max_n_pages=max_n_pages)
 
     def setup_wikipedia_semantics(
             self, stop_words=None, norm='l2', use_idf=True, sublinear_tf=False,
-            max_n_pages=None, display=False):
+            max_n_pages=None):
         """Setup wikipedia semantic model."""
         self._dump_file = XmlDumpFile()
 
         self._wikipedia_titles = [
             page['title'] for page in self._dump_file.iter_article_pages(
-                max_n_pages=max_n_pages,
-                display=display)]
+                max_n_pages=max_n_pages)]
 
         texts = (page['text']
                  for page in self._dump_file.iter_article_pages(
-                         max_n_pages=max_n_pages,
-                         display=display))
+                         max_n_pages=max_n_pages))
 
-        if display:
-            tqdm.write('TFIDF vectorizing')
         self._wikipedia_transformer = TfidfVectorizer(
             stop_words=None, norm=norm, use_idf=use_idf,
             sublinear_tf=sublinear_tf)
@@ -164,7 +156,6 @@ def main():
     from docopt import docopt
 
     arguments = docopt(__doc__)
-    display = arguments['--display']
     if arguments['--max-n-pages']:
         max_n_pages = int(arguments['--max-n-pages'])
     else:
@@ -174,18 +165,18 @@ def main():
     phrases = arguments['<phrases>']
 
     if arguments['relatedness']:
-        semantic = Semantic(max_n_pages=max_n_pages, display=display)
+        semantic = Semantic(max_n_pages=max_n_pages)
         relatedness = semantic.relatedness(phrases)
         print(relatedness)
 
     elif arguments['related']:
-        semantic = Semantic(max_n_pages=max_n_pages, display=display)
+        semantic = Semantic(max_n_pages=max_n_pages)
         titles = semantic.related(phrase)
         separator = u('\n')
         print(separator.join(titles))
 
     elif arguments['sort-by-outlierness']:
-        semantic = Semantic(max_n_pages=max_n_pages, display=display)
+        semantic = Semantic(max_n_pages=max_n_pages)
         sorted_phrases = semantic.sort_by_outlierness(phrases)
         separator = u('\n')
         print_(separator.join(sorted_phrases))
