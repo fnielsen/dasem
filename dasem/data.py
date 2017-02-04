@@ -72,7 +72,7 @@ def wordsim353(include_problems=False):
     """
     filename = join(split(__file__)[0], 'data', 'wordsim353-da',
                     'combined.csv')
-    df = read_csv(filename)
+    df = read_csv(filename, encoding='utf-8')
 
     if not include_problems:
         df = df[df.Problem != 1]
