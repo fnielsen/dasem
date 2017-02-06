@@ -47,6 +47,8 @@ import requests
 
 from shutil import copyfileobj
 
+import signal
+
 from six import b, text_type, u
 
 import tarfile
@@ -332,13 +334,16 @@ def main():
     logging_handler.setFormatter(logging_formatter)
     logger.addHandler(logging_handler)
 
+    # Ignore broken pipe errors
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
+    
     if arguments['--output']:
         output_filename = arguments['--output']
         output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
     else:
         # stdout
         output_file = 1
-    encoding = arguments['--oe']
+    output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
     if arguments['data-directory']:
@@ -358,49 +363,28 @@ def main():
         filename = arguments['<file>']
         separator = u(arguments['--separator'])
         lcc = LCC()
-        try:
-            for word_list in lcc.iter_sentence_words():
-                write(output_file,
-                      separator.join(word_list).encode(encoding) + b('\n'))
-        except Exception as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for word_list in lcc.iter_sentence_words():
+            write(output_file,
+                  separator.join(word_list).encode(output_encoding) + b('\n'))
 
     elif arguments['get-sentence-words-from-file']:
         filename = arguments['<file>']
         separator = u(arguments['--separator'])
         lcc_file = LCCFile(filename)
-        try:
-            for word_list in lcc_file.iter_sentence_words():
-                write(output_file,
-                      separator.join(word_list).encode(encoding) + b('\n'))
-        except Exception as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for word_list in lcc_file.iter_sentence_words():
+            write(output_file,
+                  separator.join(word_list).encode(output_encoding) + b('\n'))
 
     elif arguments['get-sentences']:
         lcc = LCC()
-        try:
-            for sentence in lcc.iter_sentences():
-                write(output_file, sentence.encode(encoding) + b('\n'))
-        except Exception as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for sentence in lcc.iter_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['get-sentences-from-file']:
         filename = arguments['<file>']
         lcc_file = LCCFile(filename)
         for sentence in lcc_file.iter_sentences():
-            print(sentence)
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['most-similar']:
         word = arguments['<word>']
@@ -410,7 +394,7 @@ def main():
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word)
         for word, similarity in words_and_similarity:
-            write(output_file, word.encode(encoding) + b('\n'))
+            write(output_file, word.encode(output_encoding) + b('\n'))
 
     elif arguments['train-and-save-word2vec']:
         word2vec = Word2Vec(autosetup=False)
