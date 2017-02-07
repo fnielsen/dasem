@@ -1,19 +1,18 @@
-"""eparole.
+"""eparole - Interface to DSL's ePAROLE dataset.
 
 Usage:
-  dasem [options]
+  dasem [options] word-to-lemma <word>
 
 Options:
-  -h --help
+  --debug             Debug messages.
+  -h --help           Help message
+  --ie=encoding     Input encoding [default: utf-8]
+  --oe=encoding       Output encoding [default: utf-8]
+  -o --output=<file>  Output filename, default output to stdout
+  --verbose           Verbose messages.
 
-Description
------------
-Interface to DSL's ePAROLE dataset.
-
-
-References
-----------
-http://korpus.dsl.dk/resources.html
+References:
+  http://korpus.dsl.dk/resources.html
 
 """
 
@@ -23,11 +22,15 @@ import csv
 
 import logging
 
+import os
+from os import write
 from os.path import join, sep
 
 from zipfile import ZipFile
 
 from pandas import DataFrame, read_csv
+
+from six import b, text_type
 
 import requests
 
@@ -45,7 +48,7 @@ CSV_FILENAME = 'ePAROLE.csv'
 class EParole(object):
     """Interface to ePAROLE dataset from DSL."""
 
-    def __init__(self, password=None, logging_level=logging.WARN):
+    def __init__(self, password=None):
         """Setup variables.
 
         Parameters
@@ -57,9 +60,8 @@ class EParole(object):
             Logging level.
 
         """
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__ + '.EParole')
         self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logging_level)
 
         self.word_to_lemmas_map = defaultdict(list)
 
@@ -129,7 +131,7 @@ class EParole(object):
         self.logger.info('Trying to read data from {}'.format(
             full_csv_filename))
         try:
-            df = read_csv(full_csv_filename, encoding='utf-8')
+            df = read_csv(full_csv_filename, encoding='utf-8', index_col=0)
         except IOError:
             self.extract_from_zip(password=password, zip_filename=zip_filename,
                                   filename=filename)
@@ -234,7 +236,7 @@ class EParole(object):
         --------
         >>> ep = EParole()
         >>> counts = ep.word_to_lemmas(u'bager')
-        >>> counts = {'bager': 2, 'bage': 1}
+        >>> counts == {'bager': 2, 'bage': 1}
         True
 
         """
@@ -257,18 +259,19 @@ class EParole(object):
         ----------
         word : str
             Word to be lemmatized. The word is converted to lowercase.
-        return_if_not_exists : 'work', None, '' or raise, optional
+        return_if_not_exists : 'word', None, '' or raise, optional
             How to handle the case where the word does not appear in the
             dictionary.
 
         Examples
         --------
         >>> ep = EParole()
-        >>> lemma = ep.word_to_lemma('Not in database')
-        >>> lemma is None
+        >>> lemma = ep.word_to_lemma('bogen')
+        >>> lemma == 'bog'
         True
 
         >>> ep.word_to_lemma('bager') == 'bager'
+        True
 
         """
         lemmas = self.word_to_lemmas(word.lower())
@@ -283,3 +286,47 @@ class EParole(object):
             return ''
         elif return_if_not_exists == 'raise':
             raise KeyError('{} not in word to lemmas map'.format(word))
+
+
+def main():
+    """Handle command-line interface."""
+    from docopt import docopt
+
+    arguments = docopt(__doc__)
+
+    logging_level = logging.WARN
+    if arguments['--debug']:
+        logging_level = logging.DEBUG
+    elif arguments['--verbose']:
+        logging_level = logging.INFO
+
+    logger = logging.getLogger()
+    logger.setLevel(logging_level)
+    logging_handler = logging.StreamHandler()
+    logging_handler.setLevel(logging_level)
+    logging_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_handler.setFormatter(logging_formatter)
+    logger.addHandler(logging_handler)
+
+    if arguments['--output']:
+        output_filename = arguments['--output']
+        output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
+    else:
+        # stdout
+        output_file = 1
+    output_encoding = arguments['--oe']
+    input_encoding = arguments['--ie']
+
+    if arguments['word-to-lemma']:
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding)
+
+        eparole = EParole()
+        lemma = eparole.word_to_lemma(word)
+        write(output_file, lemma.encode(output_encoding) + b('\n'))
+
+
+if __name__ == '__main__':
+    main()
