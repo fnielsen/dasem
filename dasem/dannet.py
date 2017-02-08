@@ -1,4 +1,4 @@
-"""dasem.dannet.
+"""dasem.dannet - Interface to DanNet.
 
 Usage:
   dasem.dannet build-sqlite-database [options]
@@ -14,6 +14,11 @@ Options:
 
 Description:
   This module handles DanNet, the Danish wordnet.
+
+  The `get-all-sentences` command will get all usage example sentences
+  from the synsets.
+
+  The script will automagically download the data from the DanNet homepage.
 
   words.csv:
      3-columns: (id, form, pos), e.g., (50001462, druemost, Noun)
@@ -36,19 +41,19 @@ from __future__ import absolute_import, division, print_function
 
 import csv
 
-import errno
-
 import logging
 
 import os
 from os import write
-from os.path import join, sep, splitext
+from os.path import isfile, join, sep, splitext
 
 import re
 
-import socket
-
 import sqlite3
+
+from shutil import copyfileobj
+
+import signal
 
 from zipfile import ZipFile
 
@@ -62,16 +67,26 @@ from nltk.tokenize import WordPunctTokenizer
 from pandas import read_csv, DataFrame
 from pandas.io.common import CParserError
 
-from .config import data_directory
+import requests
 
+from .config import data_directory
+from .utils import make_data_directory
+
+
+BASE_URL = 'http://www.wordnet.dk/'
 
 DANNET_FILENAME = 'DanNet-2.2_csv.zip'
 
 DANNET_SQLITE_FILENAME = splitext(DANNET_FILENAME)[0] + '.db'
 
+DANNET_CSV_ZIP_URL = 'http://www.wordnet.dk/DanNet-2.2_csv.zip'
+
 
 class Dannet(object):
     """Dannet.
+
+    Using the module will automagically download the data from the Dannet
+    homepage (http://www.wordnet.dk).
 
     Attributes
     ----------
@@ -113,6 +128,10 @@ class Dannet(object):
     >>> len(nouns)
     48404
 
+    References
+    ----------
+    - http://www.wordnet.dk
+
     """
 
     def __init__(self, logging_level=logging.WARN):
@@ -125,6 +144,18 @@ class Dannet(object):
         self.stemmer = DanishStemmer()
 
         self._db = None
+
+    def data_directory(self):
+        """Return diretory where data should be.
+
+        Returns
+        -------
+        directory : str
+            Directory.
+
+        """
+        directory = join(data_directory(), 'dannet')
+        return directory
 
     @property
     def db(self):
@@ -141,6 +172,20 @@ class Dannet(object):
             self.build_sqlite_database()
             self._db = DB(filename=full_filename, dbtype='sqlite')
         return self._db
+
+    def download(self, filename=DANNET_FILENAME, redownload=False):
+        """Download data."""
+        local_filename = join(self.data_directory(), filename)
+        if not redownload and isfile(local_filename):
+            return
+
+        self.make_data_directory()
+        url = BASE_URL + filename
+        self.logger.info('Downloading from URL {} to {}'.format(
+            url, local_filename))
+        response = requests.get(url, stream=True)
+        with open(local_filename, 'wb') as fid:
+            copyfileobj(response.raw, fid)
 
     def full_filename(self, filename=DANNET_FILENAME):
         """Prepend data directory path to filename.
@@ -204,7 +249,7 @@ class Dannet(object):
             List of words
 
         """
-        for n, sentence in enumerate(self.iter_sentences()):
+        for sentence in self.iter_sentences():
             words = self.word_tokenizer.tokenize(sentence)
             if lower:
                 words = [word.lower() for word in words]
@@ -232,16 +277,23 @@ class Dannet(object):
             Dataframe with the data from the csv file.
 
         """
+        full_zip_filename = self.full_filename(zip_filename)
+
+        if not isfile(full_zip_filename):
+            self.logger.info('File {} not downloaded'.format(zip_filename))
+            self.download()
+
         full_filename = join(splitext(zip_filename)[0], filename)
-        zip_file = ZipFile(self.full_filename(zip_filename))
+
+        zip_file = ZipFile(full_zip_filename)
         try:
             df = read_csv(zip_file.open(full_filename),
                           sep='@', encoding='latin_1', header=None)
         except CParserError:
             # Bad csv file with unquoted "@" in line 19458 and 45686
             # in synsets.csv
-            with zip_file.open(full_filename) as f:
-                csv_file = csv.reader(f, delimiter='@')
+            with zip_file.open(full_filename) as fid:
+                csv_file = csv.reader(fid, delimiter='@')
                 rows = []
                 for row in csv_file:
                     if len(row) == 6:
@@ -255,6 +307,10 @@ class Dannet(object):
         df = df.iloc[:, :-1]
 
         return df
+
+    def make_data_directory(self):
+        """Make data directory for LCC."""
+        make_data_directory(self.data_directory())
 
     def read_relations(self, zip_filename=DANNET_FILENAME):
         """Read relations CSV file.
@@ -380,6 +436,9 @@ def main():
 
     arguments = docopt(__doc__)
 
+    # Ignore broken pipe errors
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     logging_level = logging.WARN
     if arguments['--verbose']:
         logging_level = logging.INFO
@@ -419,21 +478,15 @@ def main():
             dataset = dannet.read_wordsenses()
         else:
             raise ValueError('Wrong <dataset>')
-        print(dataset.to_csv(encoding=output_encoding, index=False))
+        write(output_file,
+              dataset.to_csv(encoding=output_encoding, index=False))
 
     elif arguments['build-sqlite-database']:
         dannet.build_sqlite_database()
 
     elif arguments['get-all-sentences']:
-        try:
-            for sentence in dannet.iter_sentences():
-                write(output_file, sentence.encode(output_encoding) + b('\n'))
-        except socket.error as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for sentence in dannet.iter_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
 
 if __name__ == '__main__':
