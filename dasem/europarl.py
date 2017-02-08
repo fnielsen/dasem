@@ -146,8 +146,8 @@ def main():
     separator = u(arguments['--separator'])
 
     # Ignore broken pipe errors
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
-    
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     if arguments['get-all-sentence-words']:
         europarl = Europarl()
         for word_list in europarl.iter_sentence_words():
