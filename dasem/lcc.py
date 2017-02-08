@@ -35,8 +35,6 @@ References:
 
 from __future__ import absolute_import, print_function
 
-import errno
-
 import logging
 
 import os
@@ -335,8 +333,8 @@ def main():
     logger.addHandler(logging_handler)
 
     # Ignore broken pipe errors
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
-    
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     if arguments['--output']:
         output_filename = arguments['--output']
         output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
