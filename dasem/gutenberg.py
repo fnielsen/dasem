@@ -224,7 +224,8 @@ class Gutenberg(object):
 
         self.data_directory = join(data_directory(), 'gutenberg',
                                    'www.gutenberg.lib.md.us')
-        self.sentence_tokenizer = nltk.data.load('tokenizers/punkt/danish.pickle')
+        self.sentence_tokenizer = nltk.data.load(
+            'tokenizers/punkt/danish.pickle')
         self.whitespaces_pattern = re.compile(
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
@@ -719,8 +720,8 @@ def main():
     logger.addHandler(logging_handler)
 
     # Ignore broken pipe errors
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
-        
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     if arguments['get']:
         gutenberg = Gutenberg()
         text = gutenberg.get_text_by_id(arguments['<id>'])
