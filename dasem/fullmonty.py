@@ -9,16 +9,22 @@ Options:
   --debug             Debug messages.
   --ie=encoding       Input encoding [default: utf-8]
   --oe=encoding       Output encoding [default: utf-8]
+  -n=<n> | --n=<n>    Number. For most-similar command, the top number
+                      of items to return
   -o --output=<file>  Output filename, default output to stdout
   -h --help
   --verbose           Verbose messages.
+  --with-scores       For the most-similar command, print the score
+                      along with the words in  
+
+Examples:
+  $ python -m dasem.fullmonty most-similar -n 1 mand 
+  kvinde
 
 """
 
 
 from __future__ import absolute_import, division, print_function
-
-import errno
 
 from itertools import chain
 
@@ -28,9 +34,9 @@ import os
 from os import write
 from os.path import join
 
-import socket
+import signal
 
-from six import b, text_type
+from six import b, text_type, u
 
 from . import models
 from .config import data_directory
@@ -171,6 +177,8 @@ def main():
     logging_handler.setFormatter(logging_formatter)
     logger.addHandler(logging_handler)
 
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    
     if arguments['--output']:
         output_filename = arguments['--output']
         output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
@@ -182,25 +190,31 @@ def main():
 
     if arguments['get-all-sentences']:
         fullmonty = Fullmonty()
-        try:
-            for sentence in fullmonty.iter_sentences():
-                write(output_file, sentence.encode(output_encoding) + b('\n'))
-        except socket.error as err:
-            if err.errno != errno.EPIPE:
-                raise
-            else:
-                # if piped to the head command
-                pass
+        for sentence in fullmonty.iter_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['most-similar']:
+        
         word = arguments['<word>']
         if not isinstance(word, text_type):
             word = word.decode(input_encoding)
         word = word.lower()
+
+        top_n = arguments['--n']
+        if top_n is None:
+            top_n = 10
+        top_n = int(top_n)
+        
         word2vec = Word2Vec()
-        words_and_similarity = word2vec.most_similar(word)
-        for word, _ in words_and_similarity:
-            write(output_file, word.encode(output_encoding) + b('\n'))
+        words_and_similarity = word2vec.most_similar(word, top_n=top_n)
+
+        for word, score in words_and_similarity:
+            if arguments['--with-scores']:
+                format_spec = u("{0:+15.12f} {1}")
+            else:
+                format_spec = u("{1}")
+            write(output_file, format_spec.format(
+                score, word).encode(output_encoding) + b('\n'))
 
     elif arguments['train-and-save-word2vec']:
         word2vec = Word2Vec(autosetup=False)
