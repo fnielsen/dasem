@@ -16,7 +16,6 @@ from os.path import join, sep
 
 from numpy import zeros
 
-from .config import data_directory
 from .utils import make_data_directory
 
 
@@ -181,7 +180,7 @@ class Word2Vec(object):
         """
         return self.model.doesnt_match(words)
 
-    def most_similar(self, positive=[], negative=[], topn=10,
+    def most_similar(self, positive=[], negative=[], top_n=10,
                      restrict_vocab=None, indexer=None):
         """Return most similar words.
 
@@ -195,7 +194,7 @@ class Word2Vec(object):
             List of strings with words to include for similarity search.
         negative : list of str
             List of strings with words to discount.
-        topn : int
+        top_n : int
             Number of words to return
 
         Returns
@@ -212,7 +211,7 @@ class Word2Vec(object):
 
         """
         return self.model.most_similar(
-            positive, negative, topn, restrict_vocab, indexer)
+            positive, negative, top_n, restrict_vocab, indexer)
 
     def similarity(self, word1, word2):
         """Return value for similarity between two words.
