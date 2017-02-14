@@ -47,8 +47,8 @@ class Decompounder(object):
         Examples
         --------
         >>> decompounder = Decompounder()
-        >>> text = 'Det er en investeringsvirksomhed.'
-        >>> decomp = decompounder.decompound_word(text)
+        >>> text = 'Det er en investeringsvirksomhed'
+        >>> decomp = decompounder.decompound_text(text)
         >>> decomp == 'det er en investering virksomhed'
         True
 
