@@ -6,6 +6,7 @@ Usage:
   dasem.wikipedia category-graph | count-category-pages
   dasem.wikipedia count-pages | count-pages-per-user
   dasem.wikipedia article-link-graph [options]
+  dasem.wikipedia download [options]
   dasem.wikipedia get-all-article-sentences
   dasem.wikipedia get-all-stripped-article-texts
   dasem.wikipedia iter-pages | iter-article-words [options]
@@ -23,6 +24,14 @@ Options:
   -o --output=<file>   Output filename, default output to stdout
   -v --verbose         Verbose messages
 
+Description:
+  This module and script handle the interface to the Wikipedia corpus.
+  The XML Dump file from Wikipedia should be downloaded. This can be
+  done by the `dasem.wikipedia download` command
+
+Examples:
+  $ python -m dasem.wikipedia download --verbose
+
 """
 
 from __future__ import division, print_function
@@ -37,9 +46,11 @@ import logging
 
 import os
 from os import write
-from os.path import join, sep
+from os.path import isfile, join, sep, split
 
 import re
+
+from shutil import copyfileobj
 
 import signal
 
@@ -69,18 +80,21 @@ import mwparserfromhell
 
 import numpy as np
 
+import requests
+
 from scipy.sparse import lil_matrix
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .config import data_directory
+from .utils import make_data_directory
 from . import models
 
 
 jsonpickle_numpy.register_handlers()
 
 
-BZ2_XML_DUMP_FILENAME = 'dawiki-20160901-pages-articles.xml.bz2'
+BZ2_XML_DUMP_FILENAME = 'dawiki-latest-pages-articles.xml.bz2'
 
 DOC2VEC_FILENAME = 'wikipedia-doc2vec.pkl.gz'
 
@@ -89,6 +103,8 @@ TFIDF_VECTORIZER_FILENAME = 'wikipedia-tfidfvectorizer.json'
 ESA_PKL_FILENAME = 'wikipedia-esa.pkl.gz'
 
 ESA_JSON_FILENAME = 'wikipedia-esa.json.gz'
+
+BASE_URL = 'https://dumps.wikimedia.org/dawiki/latest/'
 
 
 def is_article_link(wikilink):
@@ -207,12 +223,13 @@ class XmlDumpFile(object):
         full_filename = self.full_filename(filename)
         self.filename = full_filename
 
-        self.sentence_tokenizer = nltk.data.load('tokenizers/punkt/danish.pickle')
+        self.sentence_tokenizer = nltk.data.load(
+            'tokenizers/punkt/danish.pickle')
         self.whitespaces_pattern = re.compile(
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
-        
+
         self.word_pattern = re.compile(
             r"""{{.+?}}|
             <!--.+?-->|
@@ -231,7 +248,36 @@ class XmlDumpFile(object):
         self.itemized_split_pattern = re.compile(
             r"^ |^Kategori:",
             flags=re.DOTALL | re.UNICODE | re.MULTILINE)
-        
+
+    def download(self, redownload=False):
+        """Download Wikipedia XML dump file.
+
+        Parameters
+        ----------
+        redownload : bool, optional
+            If true will download the database file anew even if it is already
+            downloaded.
+
+        Description
+        -----------
+        Download Wikipedia XML dump file from
+        https://dumps.wikimedia.org/dawiki/latest/.
+
+        """
+        local_filename = self.filename
+        directory, filename = split(local_filename)
+        if not redownload and isfile(local_filename):
+            self.logger.info('File {} already downloaded'.format(
+                local_filename))
+            return
+
+        self.make_data_directory()
+        url = BASE_URL + filename
+        self.logger.info('Downloading {} to {}'.format(url, local_filename))
+        response = requests.get(url, stream=True)
+        with open(local_filename, 'wb') as fid:
+            copyfileobj(response.raw, fid)
+
     def full_filename(self, filename):
         """Return filename with full filename path."""
         if sep in filename:
@@ -379,7 +425,7 @@ class XmlDumpFile(object):
 
             # Parameters for media content is not stripped by mwparserfromhell
             stripped_text = self.ignored_words_pattern.sub('', stripped_text)
-            
+
             yield stripped_text
 
     def iter_article_sentences(self, max_n_pages=None):
@@ -525,6 +571,10 @@ class XmlDumpFile(object):
         for page in self.iter_category_pages():
             n += 1
         return n
+
+    def make_data_directory(self):
+        """Make data directory for Wikipedia."""
+        make_data_directory(data_directory(), 'wikipedia')
 
     def category_graph(self):
         """Return category graph.
@@ -1075,8 +1125,8 @@ def main():
         max_n_pages = int(arguments['--max-n-pages'])
 
     # Ignore broken pipe errors
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
-        
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     dump_file = XmlDumpFile()
 
     if arguments['iter-pages']:
@@ -1104,14 +1154,17 @@ def main():
         count = dump_file.count_category_pages()
         print(count)
 
+    elif arguments['download']:
+        dump_file.download()
+
     elif arguments['get-all-stripped-article-texts']:
         for text in dump_file.iter_stripped_article_texts():
-            print(text)
+            write(output_file, text.encode(output_encoding) + b('\n'))
 
     elif arguments['get-all-article-sentences']:
         for sentence in dump_file.iter_article_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
-                
+
     elif arguments['iter-article-words']:
         for title, words in dump_file.iter_article_title_and_words(
                 max_n_pages=max_n_pages):
