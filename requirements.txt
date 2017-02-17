@@ -1,3 +1,4 @@
+afinn
 beautifulsoup4
 db.py
 docopt
