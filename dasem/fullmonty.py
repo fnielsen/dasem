@@ -15,10 +15,10 @@ Options:
   -h --help
   --verbose           Verbose messages.
   --with-scores       For the most-similar command, print the score
-                      along with the words in  
+                      along with the words
 
 Examples:
-  $ python -m dasem.fullmonty most-similar -n 1 mand 
+  $ python -m dasem.fullmonty most-similar -n 1 mand
   kvinde
 
 """
@@ -178,7 +178,7 @@ def main():
     logger.addHandler(logging_handler)
 
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-    
+
     if arguments['--output']:
         output_filename = arguments['--output']
         output_file = os.open(output_filename, os.O_RDWR | os.O_CREAT)
@@ -194,7 +194,7 @@ def main():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['most-similar']:
-        
+
         word = arguments['<word>']
         if not isinstance(word, text_type):
             word = word.decode(input_encoding)
@@ -204,7 +204,7 @@ def main():
         if top_n is None:
             top_n = 10
         top_n = int(top_n)
-        
+
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word, top_n=top_n)
 
