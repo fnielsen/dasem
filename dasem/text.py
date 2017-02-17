@@ -122,7 +122,7 @@ def main():
         decompounder = Decompounder()
         decompounded = decompounder.decompound_text(text)
         print(decompounded)
-        
+
     elif arguments['decompound-word']:
         word = arguments['<word>']
         decompounder = Decompounder()
@@ -131,7 +131,7 @@ def main():
 
     else:
         assert False
-        
+
 
 if __name__ == '__main__':
     main()
