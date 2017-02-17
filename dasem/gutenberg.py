@@ -79,13 +79,8 @@ from pandas import DataFrame
 
 import requests
 
-try:
-    from sparql import Service
-except SyntaxError:
-    # TODO: Python 3
-    pass
-
 from .config import data_directory
+from .wikidata import query_to_dataframe
 
 
 SPARQL_QUERY = """
@@ -157,9 +152,7 @@ def get_list_from_wikidata():
         DataFrame with information from Wikidata.
 
     """
-    service = Service("https://query.wikidata.org/sparql", method="GET")
-    result = service.query(SPARQL_QUERY)
-    df = DataFrame(result.fetchall(), columns=result.variables)
+    df = query_to_dataframe(SPARQL_QUERY)
     return df
 
 
