@@ -16,8 +16,6 @@ from os.path import join, sep
 
 from numpy import zeros
 
-from .utils import make_data_directory
-
 
 WORD2VEC_FILENAME = 'word2vec.pkl.gz'
 
