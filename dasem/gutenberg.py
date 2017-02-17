@@ -75,8 +75,6 @@ from nltk.tokenize import WordPunctTokenizer
 
 from numpy import zeros
 
-from pandas import DataFrame
-
 import requests
 
 from .config import data_directory
