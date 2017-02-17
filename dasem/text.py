@@ -15,11 +15,11 @@ from nltk import word_tokenize as nltk_word_tokenize
 
 class Decompounder(object):
     """Word decompunder."""
-    
+
     def __init__(self):
         """Setup map."""
         self.word_tokenizer = WordPunctTokenizer()
-        
+
         filename = join(split(__file__)[0], 'data', 'compounds.txt')
 
         self.decompound_map = {}
@@ -54,8 +54,9 @@ class Decompounder(object):
 
         """
         tokens = self.word_tokenizer.tokenize(text)
-        return " ".join(self.decompound_word(token.lower()) for token in tokens)
-        
+        return " ".join(self.decompound_word(token.lower())
+                        for token in tokens)
+
     def decompound_word(self, word):
         """Return decompounded word.
 
@@ -79,7 +80,7 @@ class Decompounder(object):
         """
         return self.decompound_map.get(word, word)
 
-                
+
 def sentence_tokenize(text):
     """Tokenize a Danish text into sentence.
 
