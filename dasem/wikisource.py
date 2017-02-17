@@ -64,9 +64,9 @@ def extract_text(text):
 
     # Ignore license information. This might be above or below the text.
     text = re.sub((r'Public domainPublic domain(.*?), '
-                   'da det blev udgivet.{15,25}\.$'), '\n', 
-                   text, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
-    
+                   'da det blev udgivet.{15,25}\.$'), '\n',
+                  text, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+
     after_teksten = re.findall(ur'Teksten\[redig\xe9r\](.*)', text,
                                flags=re.UNICODE | re.DOTALL)
     if after_teksten:
@@ -77,7 +77,7 @@ def extract_text(text):
                       flags=re.UNICODE | re.DOTALL)
     if rest:
         return u"\n\n".join(rest)
-   
+
     return text
 
 
