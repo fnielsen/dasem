@@ -73,6 +73,7 @@ beskæftigelse|s|udvalgets
 bestilling|s|kørsel
 bestyrelse|s|uddannelser
 betaling|s|forpligtelsen
+betragtning|s|grundene
 bevidsthed|s|forstyrrelser
 bevidsthed|s|niveau
 bicarbonat|koncentrationen
@@ -89,8 +90,10 @@ bogføring|s|service
 bogføring|s|virksomhed
 bog|trykkeri|virksomhed
 bolig|registret
+bombe|eksplosioner
 bopæl|s|kommunen
 bort|forpagtet
+brand|instrukser
 bremse|væske
 brød|udsalg
 brøndborer|virksomhed
@@ -121,6 +124,7 @@ data|katalog
 del|element
 deltid|s|forsikrede
 detail|butik
+direktiv|forslag
 distribution|s|virksomhed
 digitalis|molekylerne
 diskotek|s|virksomhed
@@ -155,6 +159,7 @@ ejendom|s|investering
 ejendom|s|virksomhed
 ejendomsmægler|virksomhed
 ejendom|s|udlejning
+eksamen|s|kravene
 elektriker|virksomhed
 elektronik|produkter
 emballage|industiren
@@ -191,10 +196,14 @@ finansiering|s|bidrag
 finansiering|s|rådgivning
 finansiering|s|virksomhed
 firmapensionskasselovens
+fiskeri|politik
+fleksibilitet|s|klausul
 fleksydelse|s|bidrag 
 fleksydelse|s|ordningen
+flåde|reduktion
 folkepension|s|alderen
 forlag|s|virksomhed
+formand|s|konferencen
 formidling|s|virksomhed
 formue|administration
 formue|anbringelse
@@ -202,6 +211,7 @@ formue|anbringelser
 formue|forvaltning
 formue|investering
 forsikring|s|systemet
+forskrift|s|proceduren
 forsyning|s|sikkerhed
 fortrydelse|s|ordning
 forvaltning|s|virksomhed
@@ -222,6 +232,7 @@ færdsel|s|arealer
 gartneri|produkter
 gartneri|virksomhed
 genbrug|s|produkter
+gennemførelse|s|beføjelser
 glarmester|virksomhed
 grunddata|register
 grundskole|undervisning
@@ -321,6 +332,7 @@ kommandit|selskab
 kommandit|selskaber
 kommandit|selskabet
 kommandit|selskabets
+kommission|s|formand
 kommunikation|s|midler
 kommunikation|s|virksomhed
 kompensation|s|mekanismerne
@@ -330,6 +342,8 @@ koncern|selskab
 koncern|selskaber
 koncert|virksomhed
 konference|center
+konkurrence|betingelserne
+konkurrence|forvridning
 konsulent|arbejde
 konsulent|assistance
 konsulent|bistand
@@ -346,6 +360,7 @@ kurer|virksomhed
 kursus|virksomhed
 kvalitet|s|udvikling
 kvalitet|s|udviklingen
+kvote|sanktioner
 køb|s|moms
 køle|installationer
 køler|væske
@@ -359,7 +374,12 @@ ledelse|s|rådgivning
 ledighed|s|ydelse
 livsforsikring|s|selskaber
 lov|bekendtgørelser
+lov|bestemmelser
+lovgivning|s|arbejde
+lovgivning|s|bestemmelser
 lovgivning|s|identifikator
+lovgivning|s|programmet
+luft|transport
 lægemiddel|forgiftninger
 lægemiddel|grupper
 læge|virksomhed
@@ -377,9 +397,14 @@ maskin|branchen
 maskin|forreting
 maskin|station|s|virksomhed
 medlemskab|s|periode
+medlem|s|landene
 medlem|s|staterne
 menneske|rettigheder
+miljø|informationer
 miljø|virksomhed
+minimum|s|eksamen|s|kravene
+minimum|s|standarder
+minimum|s|standarderne
 montage|arbejde
 montage|arbejder
 montage|opgaver
@@ -418,11 +443,13 @@ netværk|s|administration
 nitte|maskiner
 nyre|insufficiens
 nøgle|håndtering
+nærhed|s|princippet
 offset|reproduktion
 offset|trykkeri
 offset|virksomhed
 offshore|markedet
 omkostning|s|reduktion
+omkørsel|s|trafik
 ophold|s|status
 optiker|virksomhed
 oxygen|mætningen
@@ -432,10 +459,13 @@ oplysning|s|pligt
 ordblinde|undervisning
 overenskomst|fornyelse
 overgang|s|bestemmelser
+overgang|s|bestemmelserne
 overgang|s|tidspunktet
 pantebrev|s|handel
 padel|sport
 park|drift
+parlament|s|bygningerne
+parlament|s|medlem
 partner|selskab
 partner|selskabet
 penge|anbringelse
@@ -461,6 +491,7 @@ rederi|virksomhed
 reference|perioden
 refusion|s|beløb
 regel|database
+regional|politik
 register|oplysninger
 regnskab|s|assistance
 regnskab|s|virksomhed
@@ -502,6 +533,7 @@ samtidighedsferie|dage
 sandsugning|s|fartøjer
 sanitet|s|installationer
 sanitet|s|virksomhed
+sanktion|s|system
 satsregulering|s|procenten
 savværk|s|virksomhed
 selskab|s|ledelsens
@@ -512,6 +544,12 @@ serum|koncentration|s|niveau
 service|virksomhed
 service|ydelser
 shipping|virksomhed
+sikkerhed|s|ansvarlige
+sikkerhed|s|garantierne
+sikkerhed|s|margenerne
+sikkerhed|s|nettet
+sikkerhed|s|rådgivere
+sikkerhed|s|udvalget
 sikring|s|ordninger
 skade|s|forsikring
 skole|kommunen
@@ -539,8 +577,11 @@ spedition|s|forretninger
 spedition|s|virksomhed
 speditør|virksomhed
 standard|bikarbonat
+standardisering|s|organisation
 standard|vedtægt
 stat|s|institutioner
+stemme|forklaring
+stemme|forklaringer
 stillads|arbejde
 stillads|montage
 stillads|udlejning
@@ -568,6 +609,10 @@ telekommunikation|s|produkter
 telekommunikation|s|virksomhed
 tilbagebetaling|s|beløbet
 tilskud|s|bestemmelserne
+trafik|områder
+trafik|sikkerhed
+transport|området
+transport|sikkerheden
 transport|virksomhed
 trykkeri|virksomhed
 tryksag|s|produktion
@@ -593,6 +638,7 @@ udskrivning|s|grundlaget
 udstilling|s|material
 udstilling|s|virksomhed
 udvalg|s|varer
+udvikling|s|programmer
 udvikling|s|virksomhed
 underholdning|s|aftener
 underholdning|s|branchen
@@ -647,8 +693,10 @@ værnepligt|s|lignende
 væske|behandling
 væske|indtagelse
 væske|volumen
+våben|embargo
 web|løsninger
 web|platform
 web|portaler
 ydelse|s|beløbet
 ægtefælle|deltagelse
+ændring|s|forslag
