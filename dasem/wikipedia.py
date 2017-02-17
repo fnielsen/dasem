@@ -895,7 +895,7 @@ class Word2Vec(models.Word2Vec):
         return dir
 
     def iterable_sentence_words(self, lower=True, stem=False):
-        """Returns iterable for sentence words.
+        """Return iterable for sentence words.
 
         Parameters
         ----------
