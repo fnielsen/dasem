@@ -18,9 +18,7 @@ from bs4 import BeautifulSoup
 
 import requests
 
-from pandas import DataFrame
-
-from sparql import Service
+from .wikidata import query_to_dataframe
 
 
 SPARQL_QUERY = """
@@ -90,9 +88,7 @@ def get_list_from_wikidata():
         DataFrame with information from Wikidata.
 
     """
-    service = Service("https://query.wikidata.org/sparql", method="GET")
-    result = service.query(SPARQL_QUERY)
-    df = DataFrame(result.fetchall(), columns=result.variables)
+    df = query_to_dataframe(SPARQL_QUERY)
     return df
 
 
