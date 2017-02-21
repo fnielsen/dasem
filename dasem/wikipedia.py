@@ -836,7 +836,7 @@ class ExplicitSemanticAnalysis(object):
         --------
         >>> esa = ExplicitSemanticAnalysis()
         >>> esa.sort_by_outlierness(['hund', 'fogh', 'nyrup', 'helle'])
-        ['hund', 'nyrup', 'fogh', 'rasmussen']
+        ['hund', 'helle', 'fogh', 'nyrup']
 
         """
         R = self.relatedness(phrases)
