@@ -14,10 +14,151 @@ import gensim
 
 from os.path import join, sep
 
-from numpy import zeros
+from numpy import array, zeros
+
+import fasttext
 
 
 WORD2VEC_FILENAME = 'word2vec.pkl.gz'
+
+SENTENCES_FILENAME = 'sentences.txt'
+
+FAST_TEXT_SKIPGRAM_MODEL_FILENAME = 'fasttext-skipgram-model'
+FAST_TEXT_CBOW_MODEL_FILENAME = 'fasttext-cbow-model'
+
+
+class FastText(object):
+    """FastText abstract class."""
+
+    def __init__(self, autosetup=True):
+        """Setup logger."""
+        self.logger = logging.getLogger(__name__ + '.LCC')
+        self.logger.addHandler(logging.NullHandler())
+
+        self.model = None
+        if autosetup:
+            self.logger.info('Autosetup')
+            try:
+                self.load()
+            except ValueError:
+                # The file is probably not there
+                self.logger.info('Loading fasttext model failed. Training')
+                self.train()
+
+    def data_directory(self):
+        """Return data directory.
+
+        Raises
+        ------
+        err : NotImplementedError
+            Always raised as a derived class should define it.
+
+        """
+        raise NotImplementedError('Define this in derived class')
+
+    def full_filename(self, filename):
+        """Return filename with full filename path.
+
+        Parameters
+        ----------
+        filename : str
+            Filename. If the filename has no extension then the
+
+        """
+        if sep in filename:
+            return filename
+        else:
+            return join(self.data_directory(), filename)
+
+    def load(self, filename=None, model_type='skipgram'):
+        """Load model from pickle file.
+
+        This function is unsafe. Do not load unsafe files.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of pickle file.
+
+        """
+        if filename is None:
+            if model_type == 'skipgram':
+                filename = FAST_TEXT_SKIPGRAM_MODEL_FILENAME
+            elif model_type == 'cbow':
+                filename = FAST_TEXT_CBOW_MODEL_FILENAME
+            filename = filename + '.bin'
+
+        full_filename = self.full_filename(filename)
+        self.logger.info('Trying to load fastText model from {}'.format(
+            full_filename))
+        self.model = fasttext.load_model(full_filename, encoding='utf-8')
+
+    def make_data_directory(self):
+        """Make data directory.
+
+        Raises
+        ------
+        err : NotImplementedError
+            Always raised as a derived class should define it.
+
+        """
+        raise NotImplementedError('Define this in derived class')
+
+    def train(self, input_filename=SENTENCES_FILENAME,
+              model_filename=None,
+              model_type='skipgram'):
+        """Train a fasttext model.
+
+        Parameters
+        ----------
+        input_filename : str, optional
+            Filename for input file with sentences.
+        model_filename : str, optional
+            Filename for model output.
+        model_type : skipgram or cbow, optional
+            Model type.
+
+        """
+        if model_filename is None:
+            if model_type == 'skipgram':
+                model_filename = FAST_TEXT_SKIPGRAM_MODEL_FILENAME
+            elif model_type == 'cbow':
+                model_filename = FAST_TEXT_CBOW_MODEL_FILENAME
+
+        full_model_filename = self.full_filename(model_filename)
+        full_input_filename = self.full_filename(input_filename)
+
+        if model_type == 'skipgram':
+            self.logger.info(
+                'Training fasttext skipgram model on {} to {}'.format(
+                    full_input_filename, full_model_filename))
+            self.model = fasttext.skipgram(
+                full_input_filename, full_model_filename)
+        elif model_type == 'cbow':
+            self.logger.info(
+                'Training fasttext cbow model on {} to {}'.format(
+                    full_input_filename, full_model_filename))
+            self.model = fasttext.cbow(
+                full_input_filename, full_model_filename)
+        else:
+            raise ValueError('Wrong argument to model_type')
+
+    def word_vector(self, word):
+        """Return feature vector for word.
+
+        Parameters
+        ----------
+        word : str
+            Word.
+
+        Returns
+        -------
+        vector : np.array
+            Array will values from FastText. If the word is not in the
+            vocabulary, then a zero vector is returned.
+
+        """
+        return array(self.model[word])
 
 
 class Word2Vec(object):
@@ -87,7 +228,14 @@ class Word2Vec(object):
         self.model = gensim.models.Word2Vec.load(full_filename)
 
     def make_data_directory(self):
-        """Make data directory for LCC."""
+        """Make data directory.
+
+        Raises
+        ------
+        err : NotImplementedError
+            Always raised as a derived class should define it.
+
+        """
         raise NotImplementedError('Define this in derived class')
 
     def save(self, filename=WORD2VEC_FILENAME):
@@ -257,7 +405,8 @@ class Word2Vec(object):
 
 def main():
     """Handle command-line interface."""
-    print('dasem.models')
+    print('dasem.models.FastText')
+    print('dasem.models.Word2Vec')
 
 
 if __name__ == '__main__':
