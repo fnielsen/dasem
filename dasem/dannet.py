@@ -2,12 +2,15 @@
 
 Usage:
   dasem.dannet build-sqlite-database [options]
+  dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
   dasem.dannet show <dataset>
+  dasem.dannet train-and-save-fasttext [options]
 
 Options:
   --debug       Debug messages
   -h --help     Help message
+  --ie=encoding     Input encoding [default: utf-8]
   --oe=encoding       Output encoding [default: utf-8]
   -o --output=<file>  Output filename, default output to stdout
   -v --verbose  Verbose informational messages
@@ -41,6 +44,8 @@ from __future__ import absolute_import, division, print_function
 
 import csv
 
+import json
+
 import logging
 
 import os
@@ -69,6 +74,9 @@ from pandas.io.common import CParserError
 
 import requests
 
+from six import text_type
+
+from . import models
 from .config import data_directory
 from .utils import make_data_directory
 
@@ -430,6 +438,22 @@ class Dannet(object):
                 df.to_sql(table, con=connection, if_exists=if_exists)
 
 
+class FastText(models.FastText):
+    """FastText on Dannet corpus."""
+
+    def data_directory(self):
+        """Return data directory.
+
+        Returns
+        -------
+        directory : str
+            Directory for data.
+
+        """
+        directory = join(data_directory(), 'dannet')
+        return directory
+
+
 def main():
     """Handle command-line input."""
     from docopt import docopt
@@ -462,10 +486,11 @@ def main():
         # stdout
         output_file = 1
     output_encoding = arguments['--oe']
-
-    dannet = Dannet(logging_level=logging_level)
+    input_encoding = arguments['--ie']
 
     if arguments['show']:
+        dannet = Dannet(logging_level=logging_level)
+
         if arguments['<dataset>'] == 'relations':
             dataset = dannet.read_relations()
         elif arguments['<dataset>'] == 'synsets':
@@ -482,11 +507,25 @@ def main():
               dataset.to_csv(encoding=output_encoding, index=False))
 
     elif arguments['build-sqlite-database']:
+        dannet = Dannet(logging_level=logging_level)
         dannet.build_sqlite_database()
 
+    elif arguments['fasttext-vector']:
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding)
+
+        fast_text = FastText()
+        print(json.dumps(fast_text.word_vector(word).tolist()))
+
     elif arguments['get-all-sentences']:
+        dannet = Dannet(logging_level=logging_level)
         for sentence in dannet.iter_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
+
+    elif arguments['train-and-save-fasttext']:
+        fast_text = FastText()
+        fast_text.train()
 
 
 if __name__ == '__main__':
