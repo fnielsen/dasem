@@ -3,6 +3,7 @@
 Usage:
   dasem.fullmonty get-all-sentences [options]
   dasem.fullmonty most-similar [options] <word>
+  dasem.fullmonty train-and-save-fasttext [options]
   dasem.fullmonty train-and-save-word2vec [options]
 
 Options:
@@ -117,6 +118,21 @@ class SentenceWordsIterable(object):
         return sentence_words
 
 
+class FastText(models.FastText):
+
+    def data_directory(self):
+        """Return data directory.
+
+        Returns
+        -------
+        directory : str
+            Directory for data.
+
+        """
+        directory = join(data_directory(), 'fullmonty')
+        return directory
+
+
 class Word2Vec(models.Word2Vec):
     """Word2Vec model with automated load of all corpora."""
 
@@ -215,6 +231,10 @@ def main():
                 format_spec = u("{1}")
             write(output_file, format_spec.format(
                 score, word).encode(output_encoding) + b('\n'))
+
+    elif arguments['train-and-save-fasttext']:
+        fast_text = FastText(autosetup=False)
+        fast_text.train()
 
     elif arguments['train-and-save-word2vec']:
         word2vec = Word2Vec(autosetup=False)
