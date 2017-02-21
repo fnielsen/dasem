@@ -2,6 +2,7 @@ afinn
 beautifulsoup4
 db.py
 docopt
+fasttext
 flask
 Flask-Bootstrap
 gensim
