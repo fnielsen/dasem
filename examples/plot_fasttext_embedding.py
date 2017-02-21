@@ -14,7 +14,8 @@ from dasem.dannet import FastText
 fast_text = FastText()
 
 words = ['virksomhed', 'virxsomhed', 'forretning', 'kapital', 'finans',
-         'grus', 'grusgrav', 'transportvirksomhed', u('hyrek\xf8rsel')]
+         'grus', 'grusgrav', 'transportvirksomhed', u('hyrek\xf8rsel'),
+         'kat', 'hund']
 vector = fast_text.word_vector(words[0])
 
 df = DataFrame([], index=range(len(vector)), columns=words)
