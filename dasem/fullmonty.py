@@ -121,7 +121,7 @@ class SentenceWordsIterable(object):
 
 class FastText(models.FastText):
     """FastText model for fullmonty dataset."""
-    
+
     def data_directory(self):
         """Return data directory.
 
