@@ -14,7 +14,9 @@ import gensim
 
 from os.path import join, sep
 
-from numpy import array, zeros
+from math import sqrt
+
+from numpy import argsort, array, dot, zeros
 
 import fasttext
 
@@ -32,7 +34,7 @@ class FastText(object):
 
     def __init__(self, autosetup=True):
         """Setup logger."""
-        self.logger = logging.getLogger(__name__ + '.LCC')
+        self.logger = logging.getLogger(__name__ + '.FastText')
         self.logger.addHandler(logging.NullHandler())
 
         self.model = None
@@ -103,6 +105,36 @@ class FastText(object):
 
         """
         raise NotImplementedError('Define this in derived class')
+
+    def most_similar(self, word, top_n=10):
+        """Return most similar words.
+
+        Parameters
+        ----------
+        word : str
+            Word to compare to trained model.
+
+        Returns
+        -------
+        words : list of tuples
+            List of 2-tuples with word and similarity.
+
+        """
+        word_vector = self.word_vector(word)
+
+        model_words = list(self.model.words)
+        similarities = zeros(len(model_words))
+        self.logger.info('Searching over {} words'.format(len(model_words)))
+        for n, model_word in enumerate(model_words):
+            model_word_vector = self.word_vector(model_word)
+            model_word_vector /= sqrt((model_word_vector ** 2).sum(-1))
+            similarities[n] = dot(word_vector, model_word_vector)
+
+        indices = argsort(-similarities)
+        words_and_similarities = [
+            (model_words[indices[n]], similarities[indices[n]])
+            for n in range(top_n)]
+        return words_and_similarities
 
     def train(self, input_filename=SENTENCES_FILENAME,
               model_filename=None,
