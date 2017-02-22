@@ -11,14 +11,20 @@
 
 <h2>Results</h2>
 
+{% if w2v_similar %}
 
 <div class="container" title="Most similar words according to Word2Vec on Danish Wikipedia">
-  <h3>Similar words</h3>
+  <h3>Word2Vec similar words</h3>
 
   {% for word, similarity in w2v_similar %}
   <a href="?q={{ word }}">{{ word }}</a> |
   {% endfor %}
 </div>
+
+{% endif %}
+
+
+{% if esa_related %}
 
 <div class="container">
 
@@ -29,6 +35,11 @@
   |
   {% endfor %}
 </div>
+
+{% endif %}
+
+
+{% if eparole_lemmas %}
 
 <div class="container">
 
@@ -51,6 +62,10 @@
   <h3>DanNet relations</h3>
   {{ dannet_relations_table | safe }}
 </div>
+
+{% endif %}
+
+
 
 {% endblock %}
 
