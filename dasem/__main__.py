@@ -27,7 +27,7 @@ import socket
 
 from six import b, text_type
 
-from .fullmonty import Word2Vec
+from .fullmonty import FastText, Word2Vec
 
 
 def main():
@@ -66,7 +66,11 @@ def main():
             word = word.decode(input_encoding)
         word = word.lower()
         word2vec = Word2Vec()
-        words_and_similarity = word2vec.most_similar(word)
+        try:
+            words_and_similarity = word2vec.most_similar(word)
+        except:
+            fast_text = FastText()
+            words_and_similarity = fast_text.most_similar(word)
         try:
             for word, _ in words_and_similarity:
                 write(output_file, word.encode(output_encoding) + b('\n'))
