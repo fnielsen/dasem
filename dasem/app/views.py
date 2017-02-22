@@ -3,9 +3,7 @@
 
 from re import findall, UNICODE
 
-from flask import render_template, request
-
-from . import app
+from flask import Blueprint, current_app, render_template, request
 
 
 DANNET_SYNSET_QUERY = u"""
@@ -29,35 +27,59 @@ where s.synset_id = a.value and r.synset_id = s.synset_id;
 """
 
 
-@app.route("/")
+main = Blueprint('main', __name__, template_folder='templates')
+
+
+@main.route("/")
 def index():
     """Return index page of for app."""
     q = request.args.get('q', '')
     words = [word.lower() for word in findall('\w+', q, flags=UNICODE)]
-    dannet_synsets_table, dannet_relations_table = '(empty)', '(empty)'
-    if words:
-        word = words[0]
 
-        # https://github.com/yhat/db.py/issues/90
-        # df = app._dasem_dannet.db.query(
-        #     query, data={'word': first_word})
+    # Dannet
+    if current_app.dasem_dannet is None:
+        dannet_synsets_table, dannet_relations_table = None, None
+    else:
+        dannet_synsets_table, dannet_relations_table = '(empty)', '(empty)'
+        if words:
+            word = words[0]
 
-        query = DANNET_SYNSET_QUERY.format(word=word)
-        dannet_synsets_table = app.dasem_dannet.db.query(query).to_html()
+            # https://github.com/yhat/db.py/issues/90
+            # df = current_app._dasem_dannet.db.query(
+            #     query, data={'word': first_word})
 
-        query = DANNET_RELATIONS_QUERY.format(word=word)
-        dannet_relations_table = app.dasem_dannet.db.query(query).to_html()
+            query = DANNET_SYNSET_QUERY.format(word=word)
+            dannet_synsets_table = current_app.dasem_dannet.db.query(
+                query).to_html()
 
-    try:
-        w2v_similar = app.dasem_wikipedia_w2v.most_similar(words)
-    except (KeyError, ValueError):
-        # Word not in vocabulary
-        w2v_similar = []
-    esa_related = app.dasem_wikipedia_esa.related(q)
+            query = DANNET_RELATIONS_QUERY.format(word=word)
+            dannet_relations_table = current_app.dasem_dannet.db.query(
+                query).to_html()
 
-    eparole_lemmas = {}
-    for word in words:
-        eparole_lemmas[word] = app.dasem_eparole.word_to_lemmas(word)
+    # Word2Vec
+    if current_app.dasem_w2v is None:
+        w2v_similar = None
+    else:
+        try:
+            w2v_similar = current_app.dasem_w2v.most_similar(words, top_n=30)
+        except (KeyError, ValueError):
+            # Word not in vocabulary
+            w2v_similar = []
+
+    # Wikipedia ESA
+    if current_app.dasem_wikipedia_esa is None:
+        esa_related = None
+    else:
+        esa_related = current_app.dasem_wikipedia_esa.related(q)
+
+    # EParole
+    if current_app.dasem_eparole is None:
+        eparole_lemmas = None
+    else:
+        eparole_lemmas = {}
+        for word in words:
+            eparole_lemmas[word] = current_app.dasem_eparole.word_to_lemmas(
+                word)
 
     return render_template(
         'index.html', q=q,
