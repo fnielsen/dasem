@@ -2,6 +2,7 @@
 
 Usage:
   dasem.fullmonty get-all-sentences [options]
+  dasem.fullmonty fasttext-most-similar [options] <word>
   dasem.fullmonty most-similar [options] <word>
   dasem.fullmonty train-and-save-fasttext [options]
   dasem.fullmonty train-and-save-word2vec [options]
@@ -119,7 +120,8 @@ class SentenceWordsIterable(object):
 
 
 class FastText(models.FastText):
-
+    """FastText model for fullmonty dataset."""
+    
     def data_directory(self):
         """Return data directory.
 
@@ -204,7 +206,21 @@ def main():
     output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
-    if arguments['get-all-sentences']:
+    if arguments['fasttext-most-similar']:
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding)
+
+        top_n = arguments['--n']
+        if top_n is None:
+            top_n = 10
+        top_n = int(top_n)
+
+        fast_text = FastText()
+        for word, similarity in fast_text.most_similar(word, top_n=top_n):
+            write(output_file, word.encode('utf-8') + b('\n'))
+
+    elif arguments['get-all-sentences']:
         fullmonty = Fullmonty()
         for sentence in fullmonty.iter_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
