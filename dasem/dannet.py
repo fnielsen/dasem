@@ -4,6 +4,7 @@ Usage:
   dasem.dannet build-sqlite-database [options]
   dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
+  dasem.dannet fasttext-most-similar [options] <word>
   dasem.dannet show <dataset>
   dasem.dannet train-and-save-fasttext [options]
 
@@ -62,8 +63,6 @@ import signal
 
 from zipfile import ZipFile
 
-from six import b
-
 from db import DB
 
 from nltk.stem.snowball import DanishStemmer
@@ -74,7 +73,7 @@ from pandas.io.common import CParserError
 
 import requests
 
-from six import text_type
+from six import b, text_type
 
 from . import models
 from .config import data_directory
@@ -439,7 +438,12 @@ class Dannet(object):
 
 
 class FastText(models.FastText):
-    """FastText on Dannet corpus."""
+    """FastText on Dannet corpus.
+
+    It requires that a file called `sentences.txt` is available in the data
+    directory.
+
+    """
 
     def data_directory(self):
         """Return data directory.
@@ -522,6 +526,15 @@ def main():
         dannet = Dannet(logging_level=logging_level)
         for sentence in dannet.iter_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
+
+    elif arguments['fasttext-most-similar']:
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding)
+
+        fast_text = FastText()
+        for word, similarity in fast_text.most_similar(word):
+            write(output_file, word.encode('utf-8') + b('\n'))
 
     elif arguments['train-and-save-fasttext']:
         fast_text = FastText()
