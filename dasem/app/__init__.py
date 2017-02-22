@@ -10,22 +10,53 @@ from flask_bootstrap import Bootstrap
 
 from ..dannet import Dannet
 from ..eparole import EParole
-from ..wikipedia import ExplicitSemanticAnalysis, Word2Vec
+from ..wikipedia import ExplicitSemanticAnalysis
+from ..fullmonty import Word2Vec
 
 
-app = Flask(__name__)
-Bootstrap(app)
+def create_app(enabled_features=('word2vec',), logging_level=logging.WARN):
+    """Create app.
 
-logging_level = logging.DEBUG
-if not app.debug:
+    Factory for app.
+
+    Parameters
+    ----------
+    enabled_features : list of str, optional
+        Toggle to enable 'Word2Vec' in app
+    logging_level : Logging.WARN, logging.INFO, ..., optional
+        Logging level.
+
+    """
+    app = Flask(__name__)
+    Bootstrap(app)
+
     app.logger.setLevel(logging_level)
-    logging.basicConfig()
 
-app.logger.info('Setting up datasets')
-app.dasem_dannet = Dannet()
-app.dasem_wikipedia_esa = ExplicitSemanticAnalysis()
-app.dasem_wikipedia_w2v = Word2Vec()
-app.dasem_eparole = EParole()
-app.logger.info('Datasets loaded')
+    app.logger.info('Setting up datasets')
 
-from . import views
+    if 'dannet' in enabled_features:
+        app.dasem_dannet = Dannet()
+    else:
+        app.dasem_dannet = None
+
+    if 'esa' in enabled_features:
+        app.dasem_wikipedia_esa = ExplicitSemanticAnalysis()
+    else:
+        app.dasem_wikipedia_esa = None
+
+    if 'word2vec' in enabled_features:
+        app.dasem_w2v = Word2Vec()
+    else:
+        app.dasem_w2v = None
+
+    if 'eparole' in enabled_features:
+        app.dasem_eparole = EParole()
+    else:
+        app.dasem_eparole = None
+
+    app.logger.info('Datasets loaded')
+
+    from .views import main as main_blueprint
+    app.register_blueprint(main_blueprint)
+
+    return app
