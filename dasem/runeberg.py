@@ -48,7 +48,7 @@ def fix_author(author):
 
     Examples
     --------
-    >>> author = 'Lybeck, Mikael)
+    >>> author = 'Lybeck, Mikael'
     >>> fix_author(author)
     'Mikael Lybeck'
 
