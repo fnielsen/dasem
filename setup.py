@@ -19,8 +19,10 @@ setup(
     url='https://github.com/fnielsen/dasem',
     packages=['dasem'],
     package_data={
-        'dasem.data': [
-            'four_words.csv'
+        'dasem': [
+            'data/four_words.csv',
+            'data/compounds.txt',
+            'data/README.rst',
         ]
     },
     install_requires=requirements,
@@ -28,5 +30,5 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 2.7',
     ],
-    test_requires=['pytest', 'flake8'],
+    tests_require=['pytest', 'flake8'],
 )
