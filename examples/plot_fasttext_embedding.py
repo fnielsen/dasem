@@ -24,7 +24,7 @@ for word in words:
     df.ix[:, word] = fast_text.word_vector(word)
 
 corr = df.corr()
-sns.heatmap(corr, 
+sns.heatmap(corr,
             xticklabels=corr.columns.values,
             yticklabels=corr.columns.values)
 title('Correlation in word embedding')
