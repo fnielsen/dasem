@@ -13,10 +13,23 @@
 
 {% if w2v_similar %}
 
-<div class="container" title="Most similar words according to Word2Vec on Danish Wikipedia">
+<div class="container" title="Most similar words according to Fullmonty corpus">
   <h3>Word2Vec similar words</h3>
 
   {% for word, similarity in w2v_similar %}
+  <a href="?q={{ word }}">{{ word }}</a> |
+  {% endfor %}
+</div>
+
+{% endif %}
+
+
+{% if fast_text_similar %}
+
+<div class="container" title="Most similar words according to FastText on fullmonty">
+  <h3>FastText similar words</h3>
+
+  {% for word, similarity in fast_text_similar %}
   <a href="?q={{ word }}">{{ word }}</a> |
   {% endfor %}
 </div>
