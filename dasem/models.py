@@ -14,9 +14,7 @@ import gensim
 
 from os.path import join, sep
 
-from math import sqrt
-
-from numpy import argsort, array, dot, zeros
+from numpy import argsort, array, dot, newaxis, sqrt, zeros
 
 import fasttext
 
@@ -47,6 +45,9 @@ class FastText(object):
                 self.logger.info('Loading fasttext model failed. Training')
                 self.train()
 
+        # Projection matrix used for similarity computation
+        self._normalized_matrix = None
+                
     def data_directory(self):
         """Return data directory.
 
@@ -95,6 +96,9 @@ class FastText(object):
             full_filename))
         self.model = fasttext.load_model(full_filename, encoding='utf-8')
 
+        # Invalidating cached computation
+        self._normalized_matrix = None
+        
     def make_data_directory(self):
         """Make data directory.
 
@@ -123,13 +127,19 @@ class FastText(object):
         word_vector = self.word_vector(word)
 
         model_words = list(self.model.words)
-        similarities = zeros(len(model_words))
-        self.logger.info('Searching over {} words'.format(len(model_words)))
-        for n, model_word in enumerate(model_words):
-            model_word_vector = self.word_vector(model_word)
-            model_word_vector /= sqrt((model_word_vector ** 2).sum(-1))
-            similarities[n] = dot(word_vector, model_word_vector)
 
+        if self._normalized_matrix is None:
+            self.logger.info('Computing normalized matrix')
+            self._normalized_matrix = zeros(
+                (len(model_words), self.model.dim))
+            for n, model_word in enumerate(model_words):
+                self._normalized_matrix[n, :] = self.word_vector(model_word)
+            self._normalized_matrix /= sqrt((self._normalized_matrix ** 2).sum(-1))[..., newaxis]
+
+        self.logger.debug('Searching over {} words'.format(len(model_words)))
+        similarities = dot(self._normalized_matrix, word_vector)
+
+        self.logger.debug('Sorting similarities')
         indices = argsort(-similarities)
         words_and_similarities = [
             (model_words[indices[n]], similarities[indices[n]])
