@@ -3,18 +3,16 @@
 
 from __future__ import absolute_import, division, print_function
 
-import logging
-
 from flask import Flask
 from flask_bootstrap import Bootstrap
 
 from ..dannet import Dannet
 from ..eparole import EParole
 from ..wikipedia import ExplicitSemanticAnalysis
-from ..fullmonty import Word2Vec
+from ..fullmonty import FastText, Word2Vec
 
 
-def create_app(enabled_features=('word2vec',), logging_level=logging.WARN):
+def create_app(enabled_features=('fasttext', 'word2vec',)):
     """Create app.
 
     Factory for app.
@@ -22,15 +20,12 @@ def create_app(enabled_features=('word2vec',), logging_level=logging.WARN):
     Parameters
     ----------
     enabled_features : list of str, optional
-        Toggle to enable 'Word2Vec' in app
-    logging_level : Logging.WARN, logging.INFO, ..., optional
-        Logging level.
+        Toggle to enable 'word2vec' in app
 
     """
     app = Flask(__name__)
-    Bootstrap(app)
 
-    app.logger.setLevel(logging_level)
+    Bootstrap(app)
 
     app.logger.info('Setting up datasets')
 
@@ -43,6 +38,11 @@ def create_app(enabled_features=('word2vec',), logging_level=logging.WARN):
         app.dasem_wikipedia_esa = ExplicitSemanticAnalysis()
     else:
         app.dasem_wikipedia_esa = None
+
+    if 'fasttext' in enabled_features:
+        app.dasem_fast_text = FastText()
+    else:
+        app.dasem_fast_text = None
 
     if 'word2vec' in enabled_features:
         app.dasem_w2v = Word2Vec()
