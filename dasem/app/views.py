@@ -5,6 +5,7 @@ from re import findall, UNICODE
 
 from flask import Blueprint, current_app, render_template, request
 
+from six import u
 
 DANNET_SYNSET_QUERY = u"""
 select w.form, ws.word_id, s.label, ws.synset_id, w.pos, s.gloss
@@ -56,6 +57,14 @@ def index():
             dannet_relations_table = current_app.dasem_dannet.db.query(
                 query).to_html()
 
+    # FastText
+    if current_app.dasem_fast_text is None:
+        fast_text_similar = None
+    else:
+        query = u(" ").join(words)
+        fast_text_similar = current_app.dasem_fast_text.most_similar(
+            query, top_n=30)
+
     # Word2Vec
     if current_app.dasem_w2v is None:
         w2v_similar = None
@@ -85,6 +94,7 @@ def index():
         'index.html', q=q,
         dannet_synset_table=dannet_synsets_table,
         dannet_relations_table=dannet_relations_table,
+        fast_text_similar=fast_text_similar,
         w2v_similar=w2v_similar,
         esa_related=esa_related,
         eparole_lemmas=eparole_lemmas)
