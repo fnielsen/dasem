@@ -27,7 +27,8 @@ class Decompounder(object):
             for line in fid:
                 parts = line.strip().split('|')
                 compound = "".join(parts)
-                decompounded_parts = [part for part in parts if part != 's']
+                decompounded_parts = [part for part in parts
+                                      if part != 's' and part != 'e']
                 decompounded = " ".join(decompounded_parts)
                 self.decompound_map[compound] = decompounded
 
