@@ -47,7 +47,7 @@ class FastText(object):
 
         # Projection matrix used for similarity computation
         self._normalized_matrix = None
-                
+
     def data_directory(self):
         """Return data directory.
 
@@ -98,7 +98,7 @@ class FastText(object):
 
         # Invalidating cached computation
         self._normalized_matrix = None
-        
+
     def make_data_directory(self):
         """Make data directory.
 
@@ -134,7 +134,8 @@ class FastText(object):
                 (len(model_words), self.model.dim))
             for n, model_word in enumerate(model_words):
                 self._normalized_matrix[n, :] = self.word_vector(model_word)
-            self._normalized_matrix /= sqrt((self._normalized_matrix ** 2).sum(-1))[..., newaxis]
+            self._normalized_matrix /= sqrt(
+                (self._normalized_matrix ** 2).sum(-1))[..., newaxis]
 
         self.logger.debug('Searching over {} words'.format(len(model_words)))
         similarities = dot(self._normalized_matrix, word_vector)
