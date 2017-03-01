@@ -63,7 +63,7 @@ from os.path import join, sep
 
 import signal
 
-from six import b, u
+from six import b, text_type, u
 
 from zipfile import ZipFile
 
@@ -739,9 +739,17 @@ def main():
         write(output_file, df.to_csv(encoding=encoding))
 
     elif arguments['most-similar']:
-        word = arguments['<word>'].decode(input_encoding).lower()
+        # Input argument
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding).lower()
+        word = word.lower()
+
+        # Compute similarity with the Word2Vec model
         word2vec = Word2Vec()
         words_and_similarity = word2vec.most_similar(word)
+
+        # Output the result
         for word, similarity in words_and_similarity:
             write(output_file, word.encode(encoding) + b('\n'))
 
