@@ -31,10 +31,10 @@ class Semantic(object):
     --------
     >>> semantic = Semantic(30000)  # and wait
     >>> semantic.relatedness(['hund', 'kat', 'hus', 'vindue']).round(3)
-    array([[ 1.   ,  0.014,  0.001,  0.   ],
-           [ 0.014,  1.   ,  0.002,  0.   ],
-           [ 0.001,  0.002,  1.   ,  0.027],
-           [ 0.   ,  0.   ,  0.027,  1.   ]])
+    array([[ 1.   ,  0.022,  0.005,  0.001],
+           [ 0.022,  1.   ,  0.002,  0.   ],
+           [ 0.005,  0.002,  1.   ,  0.01 ],
+           [ 0.001,  0.   ,  0.01 ,  1.   ]])
 
     """
 
@@ -140,7 +140,7 @@ class Semantic(object):
         --------
         >>> semantic = Semantic(20000)
         >>> semantic.sort_by_outlierness(['hund', 'fogh', 'nyrup', 'helle'])
-        ['hund', 'nyrup', 'fogh', 'rasmussen']
+        ['hund', 'helle', 'fogh', 'nyrup']
 
         """
         R = self.relatedness(phrases)
