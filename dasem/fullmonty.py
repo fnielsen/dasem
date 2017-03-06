@@ -136,7 +136,19 @@ class FastText(models.FastText):
 
 
 class Word2Vec(models.Word2Vec):
-    """Word2Vec model with automated load of all corpora."""
+    """Word2Vec model with automated load of all corpora.
+
+    Examples
+    --------
+    >>> w2v = Word2Vec()
+    >>> w2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
+    'stol'
+
+    >>> words = w2v.most_similar('studie')
+    >>> len(words)
+    10
+
+    """
 
     def data_directory(self):
         """Return data directory.
