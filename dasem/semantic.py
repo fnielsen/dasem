@@ -138,7 +138,7 @@ class Semantic(object):
 
         Examples
         --------
-        >>> semantic = dasem.semantic.Semantic(20000)
+        >>> semantic = Semantic(20000)
         >>> semantic.sort_by_outlierness(['hund', 'fogh', 'nyrup', 'helle'])
         ['hund', 'nyrup', 'fogh', 'rasmussen']
 
