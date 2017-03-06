@@ -18,6 +18,8 @@ from bs4 import BeautifulSoup
 
 import requests
 
+from six import u
+
 from .wikidata import query_to_dataframe
 
 
@@ -65,8 +67,8 @@ def extract_text(text):
                    'da det blev udgivet.{15,25}\.$'), '\n',
                   text, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
 
-    after_teksten = re.findall(ur'Teksten\[redig\xe9r\](.*)', text,
-                               flags=re.UNICODE | re.DOTALL)
+    regex = r'Teksten\[redig' + u('\xe9') + r'r\](.*)'
+    after_teksten = re.findall(regex, text, flags=re.UNICODE | re.DOTALL)
     if after_teksten:
         return u"\n\n".join(after_teksten)
 
