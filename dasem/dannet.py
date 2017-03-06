@@ -304,24 +304,37 @@ class Dannet(object):
             df = read_csv(zip_file.open(full_filename),
                           sep='@', encoding='latin_1', header=None)
         except CParserError:
+            self.logger.debug('Reading of csv with Pandas failed')
             # Bad csv file with unquoted "@" in line 19458 and 45686
             # in synsets.csv
             with zip_file.open(full_filename) as fid:
-                # Encoding problem handle with
-                # https://stackoverflow.com/questions/36971345
-                lines = (line.decode('latin_1') for line in fid)
-                csv_file = csv.reader(lines, delimiter='@')
-                rows = []
-                for row in csv_file:
-                    if len(row) == 6:
-                        row = [row[0], row[1], row[2] + '@' + row[3],
-                               row[4], row[5]]
-                    rows.append(row)
+                # Major problem with getting Python2/3 compatibility
+                if version_info[0] == 2:
+                    csv_file = csv.reader(fid, delimiter='@')
+                    rows = []
+                    for row in csv_file:
+                        if len(row) == 6:
+                            row = [row[0], row[1], row[2] + '@' + row[3],
+                                   row[4], row[5]]
+                        row = [elem.decode('latin_1') for elem in row]
+                        rows.append(row)
+                else:
+                    # Encoding problem handle with
+                    # https://stackoverflow.com/questions/36971345
+                    lines = (line.decode('latin_1') for line in fid)
+                    csv_file = csv.reader(lines, delimiter='@')
+                    rows = []
+                    for row in csv_file:
+                        if len(row) == 6:
+                            row = [row[0], row[1], row[2] + '@' + row[3],
+                                   row[4], row[5]]
+                        rows.append(row)
             df = DataFrame(rows)
 
         # Drop last column which always seems to be superfluous
         df = df.iloc[:, :-1]
-
+        self.logger.debug('Read {}x{} data from csv'.format(*df.shape))
+        
         return df
 
     def make_data_directory(self):
@@ -371,9 +384,18 @@ class Dannet(object):
         df : pandas.DataFrame
             Dataframe with columns id, label, gloss, ontological_type.
 
+        Examples
+        --------
+        >>> dannet = Dannet()
+        >>> df = dannet.read_synsets()
+        >>> 'label' in df.columns
+        True
+
         """
         df = self.read_zipped_csv_file(
             'synsets.csv', zip_filename=zip_filename)
+        # import pdb
+        # pdb.set_trace()
         df.columns = ['synset_id', 'label', 'gloss', 'ontological_type']
         return df
 
