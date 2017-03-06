@@ -4,15 +4,17 @@ import os
 
 from setuptools import setup
 
+import versioneer
+
 
 filename = os.path.join(os.path.dirname(__file__), 'requirements.txt')
 requirements = open(filename).read().splitlines()
 
 setup(
     name='dasem',
-    version='0.1.dev0',
     author='Finn Aarup Nielsen',
     author_email='faan@dtu.dk',
+    cmdclass=versioneer.get_cmdclass(),
     description='Danish semantic analysis',
     license='Apache',
     keywords='text',
