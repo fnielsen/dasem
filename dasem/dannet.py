@@ -5,7 +5,7 @@ Usage:
   dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
   dasem.dannet fasttext-most-similar [options] <word>
-  dasem.dannet show <dataset>
+  dasem.dannet show [options] <dataset>
   dasem.dannet train-and-save-fasttext [options]
 
 Options:
@@ -61,6 +61,8 @@ from shutil import copyfileobj
 
 import signal
 
+from sys import version_info
+
 from zipfile import ZipFile
 
 from db import DB
@@ -104,18 +106,19 @@ class Dannet(object):
     --------
     >>> dannet = Dannet()
     >>> dannet.db.tables.words
-    +--------------------------------------------------+
-    |                      words                       |
-    +--------+---------+--------------+----------------+
-    | Column | Type    | Foreign Keys | Reference Keys |
-    +--------+---------+--------------+----------------+
-    | index  | INTEGER |              |                |
-    | id     | TEXT    |              |                |
-    | form   | TEXT    |              |                |
-    | pos    | TEXT    |              |                |
-    +--------+---------+--------------+----------------+
+    +---------------------------------------------------+
+    |                       words                       |
+    +---------+---------+--------------+----------------+
+    | Column  | Type    | Foreign Keys | Reference Keys |
+    +---------+---------+--------------+----------------+
+    | index   | INTEGER |              |                |
+    | word_id | TEXT    |              |                |
+    | form    | TEXT    |              |                |
+    | pos     | TEXT    |              |                |
+    +---------+---------+--------------+----------------+
 
-    >>> query = '''  # From README
+    >>> # From README
+    >>> query = '''
     ... SELECT w.form, ws.register, s.synset_id, s.gloss, s.ontological_type
     ... FROM synsets s, wordsenses ws, words w
     ... WHERE s.synset_id = ws.synset_id
@@ -141,12 +144,12 @@ class Dannet(object):
 
     """
 
-    def __init__(self, logging_level=logging.WARN):
+    def __init__(self):
         """Initialize logger and and database."""
         self.logger = logging.getLogger(__name__ + '.Dannet')
         self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logging_level)
 
+        self.logger.debug('Initializing tokenizer and stemmer')
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
 
@@ -175,6 +178,9 @@ class Dannet(object):
             full_filename))
         try:
             self._db = DB(filename=full_filename, dbtype='sqlite')
+            if 'words' not in self._db.tables:
+                # There is no content in the database
+                raise Exception('Not initialized')
         except:
             self.build_sqlite_database()
             self._db = DB(filename=full_filename, dbtype='sqlite')
@@ -292,6 +298,7 @@ class Dannet(object):
 
         full_filename = join(splitext(zip_filename)[0], filename)
 
+        self.logger.info('Reading from {}'.format(full_zip_filename))
         zip_file = ZipFile(full_zip_filename)
         try:
             df = read_csv(zip_file.open(full_filename),
@@ -300,13 +307,15 @@ class Dannet(object):
             # Bad csv file with unquoted "@" in line 19458 and 45686
             # in synsets.csv
             with zip_file.open(full_filename) as fid:
-                csv_file = csv.reader(fid, delimiter='@')
+                # Encoding problem handle with
+                # https://stackoverflow.com/questions/36971345
+                lines = (line.decode('latin_1') for line in fid)
+                csv_file = csv.reader(lines, delimiter='@')
                 rows = []
                 for row in csv_file:
                     if len(row) == 6:
                         row = [row[0], row[1], row[2] + '@' + row[3],
                                row[4], row[5]]
-                    row = [element.decode('latin_1') for element in row]
                     rows.append(row)
             df = DataFrame(rows)
 
@@ -493,7 +502,7 @@ def main():
     input_encoding = arguments['--ie']
 
     if arguments['show']:
-        dannet = Dannet(logging_level=logging_level)
+        dannet = Dannet()
 
         if arguments['<dataset>'] == 'relations':
             dataset = dannet.read_relations()
@@ -507,11 +516,17 @@ def main():
             dataset = dannet.read_wordsenses()
         else:
             raise ValueError('Wrong <dataset>')
-        write(output_file,
-              dataset.to_csv(encoding=output_encoding, index=False))
+
+        # https://stackoverflow.com/questions/42628069
+        if version_info[0] == 2:
+            write(output_file,
+                  dataset.to_csv(encoding=output_encoding, index=False))
+        else:
+            output = dataset.to_csv(index=False)
+            write(output_file, output.encode(output_encoding))
 
     elif arguments['build-sqlite-database']:
-        dannet = Dannet(logging_level=logging_level)
+        dannet = Dannet()
         dannet.build_sqlite_database()
 
     elif arguments['fasttext-vector']:
@@ -523,7 +538,7 @@ def main():
         print(json.dumps(fast_text.word_vector(word).tolist()))
 
     elif arguments['get-all-sentences']:
-        dannet = Dannet(logging_level=logging_level)
+        dannet = Dannet()
         for sentence in dannet.iter_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
 
