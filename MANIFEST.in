@@ -1,1 +1,3 @@
 include requirements.txt
+include requirements.txtinclude versioneer.py
+include dasem/_version.py
