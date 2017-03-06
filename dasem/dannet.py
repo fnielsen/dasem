@@ -334,7 +334,7 @@ class Dannet(object):
         # Drop last column which always seems to be superfluous
         df = df.iloc[:, :-1]
         self.logger.debug('Read {}x{} data from csv'.format(*df.shape))
-        
+
         return df
 
     def make_data_directory(self):
