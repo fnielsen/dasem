@@ -33,4 +33,5 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     tests_require=['pytest', 'flake8'],
+    version=versioneer.get_version(),
 )
