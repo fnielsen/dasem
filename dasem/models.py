@@ -360,12 +360,6 @@ class Word2Vec(object):
         word : str
             Outlier word.
 
-        Examples
-        --------
-        >>> w2v = Word2Vec()
-        >>> w2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
-        'stol'
-
         """
         return self.model.doesnt_match(words)
 
@@ -390,13 +384,6 @@ class Word2Vec(object):
         -------
         words : list of tuples
             List of 2-tuples with word and similarity.
-
-        Examples
-        --------
-        >>> w2v = Word2Vec()
-        >>> words = w2v.most_similar('studie')
-        >>> len(words)
-        10
 
         """
         return self.model.most_similar(
