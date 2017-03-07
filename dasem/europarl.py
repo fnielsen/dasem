@@ -1,6 +1,7 @@
 """europarl.
 
 Usage:
+  dasem.europarl download [options]
   dasem.europarl get-all-sentence-words [options]
   dasem.europarl get-all-sentences [options]
 
@@ -12,6 +13,17 @@ Options:
   --separator=<sep>   Separator [default: |]
   --verbose           Verbose messages.
 
+Description:
+  This module handles the interface to the Danish part of the Europarl corpus
+  available at http://www.statmt.org/europarl/
+
+  It will work from the Danish-English parallel corpus available from:
+
+      http://www.statmt.org/europarl/v7/da-en.tgz
+
+Example:
+  $ python -m dasem.europarl download --info
+
 """
 
 
@@ -21,11 +33,15 @@ import logging
 
 import os
 from os import write
-from os.path import join
+from os.path import isfile, join
+
+from shutil import copyfileobj
 
 import signal
 
 import tarfile
+
+import requests
 
 from six import b, u
 
@@ -33,18 +49,22 @@ from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
 
 from .config import data_directory
+from .utils import make_data_directory
 
 
 TAR_GZ_FILENAME = 'da-en.tar.gz'
+TGZ_PARALLEL_CORPUS_FILENAME = "da-en.tgz"
 
 DANISH_FILENAME = 'europarl-v7.da-en.da'
+
+TGZ_PARALLEL_CORPUS_URL = "http://www.statmt.org/europarl/v7/da-en.tgz"
 
 
 class Europarl(object):
     """Europarl corpus."""
 
     def __init__(self, danish_filename=DANISH_FILENAME,
-                 tar_gz_filename=TAR_GZ_FILENAME):
+                 tar_gz_filename=TGZ_PARALLEL_CORPUS_FILENAME):
         """Setup filename.
 
         Parameters
@@ -52,9 +72,12 @@ class Europarl(object):
         danish_filename : str
             Filename for '.da' file in the tar.gz file.
         tar_gz_filename : str
-            Filename for tar.gz file with Danish/English.
+            Filename for tar.gz or tgz file with Danish/English.
 
         """
+        self.logger = logging.getLogger(__name__ + '.Europarl')
+        self.logger.addHandler(logging.NullHandler())
+
         self.tar_gz_filename = tar_gz_filename
         self.danish_filename = danish_filename
 
@@ -72,6 +95,23 @@ class Europarl(object):
         """
         directory = join(data_directory(), 'europarl')
         return directory
+
+    def download(self, redownload=False):
+        """Download corpus."""
+        filename = TGZ_PARALLEL_CORPUS_FILENAME
+        local_filename = join(self.data_directory(), filename)
+        if not redownload and isfile(local_filename):
+            message = 'Not downloading as corpus already download to {}'
+            self.logger.info(message.format(local_filename))
+            return
+
+        self.make_data_directory()
+        url = TGZ_PARALLEL_CORPUS_URL
+        self.logger.info('Downloading {} to {}'.format(url, local_filename))
+        response = requests.get(url, stream=True)
+        with open(local_filename, 'wb') as fid:
+            copyfileobj(response.raw, fid)
+        self.logger.info('Corpus downloaded'.format())
 
     def iter_sentences(self):
         """Yield sentences.
@@ -114,6 +154,10 @@ class Europarl(object):
 
             yield words
 
+    def make_data_directory(self):
+        """Make data directory for Europarl."""
+        make_data_directory(self.data_directory())
+
 
 def main():
     """Handle command-line interface."""
@@ -148,7 +192,11 @@ def main():
     # Ignore broken pipe errors
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-    if arguments['get-all-sentence-words']:
+    if arguments['download']:
+        europarl = Europarl()
+        europarl.download()
+
+    elif arguments['get-all-sentence-words']:
         europarl = Europarl()
         for word_list in europarl.iter_sentence_words():
             write(output_file,
