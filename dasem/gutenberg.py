@@ -2,6 +2,7 @@ r"""gutenberg.
 
 Usage:
   dasem.gutenberg --help
+  dasem.gutenberg download [options]
   dasem.gutenberg get [options] <id>
   dasem.gutenberg get-all-sentences [options]
   dasem.gutenberg get-all-texts [options]
@@ -59,11 +60,13 @@ import logging
 import re
 
 from os import walk, write
-from os.path import join, sep
+from os.path import join, sep, split
 
 import signal
 
 from six import b, text_type, u
+
+from subprocess import call
 
 from zipfile import ZipFile
 
@@ -91,6 +94,9 @@ SELECT ?work ?workLabel ?authorLabel ?gutenberg WHERE {
 """
 
 WORD2VEC_FILENAME = 'gutenberg-word2vec.pkl.gz'
+
+DOWNLOAD_URL = ('http://www.gutenberg.org/robot/harvest?'
+                'filetypes[]=txt&langs[]=da')
 
 
 def extract_text(text):
@@ -221,6 +227,30 @@ class Gutenberg(object):
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
+
+    def download(self):
+        r"""Download corpus from Gutenberg homepage.
+
+        This method will use the external 'wget' program that is the only
+        download method the Project Gutenberg allows. This is explained on
+        their homepage. The command is:
+
+        wget -w 2 -m -H \
+          "http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=da"
+
+        This method will spawn a subprocess. The 'wget' program needs to be
+        installed.
+
+        References
+        ----------
+        https://www.gutenberg.org/wiki/Gutenberg%3aInformation_About_Robot_Access_to_our_Pages
+
+        """
+        directory = split(self.data_directory)[0]
+        self.logger.info('Downloading Danish Gutenberg corpus to {}'.format(
+            directory))
+        call(['wget', '-w', '2', '-m', '-H', DOWNLOAD_URL], cwd=directory)
+        self.logger.debug('Gutenberg corpus downloaded')
 
     def translate_aa(self, text):
         """Translate double-a to 'bolle-aa'.
@@ -713,7 +743,11 @@ def main():
     # Ignore broken pipe errors
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-    if arguments['get']:
+    if arguments['download']:
+        gutenberg = Gutenberg()
+        gutenberg.download()
+
+    elif arguments['get']:
         gutenberg = Gutenberg()
         text = gutenberg.get_text_by_id(arguments['<id>'])
         write(output_file, text.encode(encoding) + b('\n'))
