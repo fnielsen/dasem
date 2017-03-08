@@ -1,6 +1,7 @@
 """fullmonty.
 
 Usage:
+  dasem.fullmonty download [options]
   dasem.fullmonty get-all-sentences [options]
   dasem.fullmonty fasttext-most-similar [options] <word>
   dasem.fullmonty most-similar [options] <word>
@@ -50,14 +51,31 @@ from .utils import make_data_directory
 
 
 class Fullmonty(object):
-    """All corpora."""
+    """All corpora.
+
+    The corpora included in the Fullmonty aggregated corpora ae
+    Dannet, Gutenberg, LCC and Europarl.
+
+    """
 
     def __init__(self):
-        """Setup objects for corpora."""
+        """Setup objects for logger and corpora."""
+        self.logger = logging.getLogger(__name__ + '.Fullmonty')
+        self.logger.addHandler(logging.NullHandler())
+
         self.dannet = Dannet()
         self.gutenberg = Gutenberg()
         self.lcc = LCC()
         self.europarl = Europarl()
+
+    def download(self):
+        """Download all corpora."""
+        self.logger.info('Downloading all corpora')
+        self.dannet.download()
+        self.gutenberg.download()
+        self.lcc.download()
+        self.europarl.download()
+        self.logger.debug('All corpora downloaded')
 
     def iter_sentences(self):
         """Iterate over sentences from all corpora.
@@ -218,7 +236,11 @@ def main():
     output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
-    if arguments['fasttext-most-similar']:
+    if arguments['download']:
+        fullmonty = Fullmonty()
+        fullmonty.download()
+
+    elif arguments['fasttext-most-similar']:
         word = arguments['<word>']
         if not isinstance(word, text_type):
             word = word.decode(input_encoding)
