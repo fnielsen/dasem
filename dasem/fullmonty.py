@@ -21,6 +21,8 @@ Options:
                       along with the words
 
 Examples:
+  $ python -m dasem.fullmonty download --verbose
+
   $ python -m dasem.fullmonty most-similar -n 1 mand
   kvinde
 
