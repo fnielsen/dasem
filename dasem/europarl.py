@@ -22,7 +22,7 @@ Description:
       http://www.statmt.org/europarl/v7/da-en.tgz
 
 Example:
-  $ python -m dasem.europarl download --info
+  $ python -m dasem.europarl download --debug
 
 """
 
@@ -102,7 +102,7 @@ class Europarl(object):
         local_filename = join(self.data_directory(), filename)
         if not redownload and isfile(local_filename):
             message = 'Not downloading as corpus already download to {}'
-            self.logger.info(message.format(local_filename))
+            self.logger.debug(message.format(local_filename))
             return
 
         self.make_data_directory()
@@ -111,7 +111,7 @@ class Europarl(object):
         response = requests.get(url, stream=True)
         with open(local_filename, 'wb') as fid:
             copyfileobj(response.raw, fid)
-        self.logger.info('Corpus downloaded'.format())
+        self.logger.debug('Corpus downloaded'.format())
 
     def iter_sentences(self):
         """Yield sentences.
