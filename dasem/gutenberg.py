@@ -190,7 +190,7 @@ def get_text_by_id(id):
 class Gutenberg(object):
     """Gutenberg.
 
-    Interface to Gutenberg. 
+    Interface to Gutenberg.
 
     The data will be mirrored/downloaded to a directory like:
 
@@ -263,7 +263,7 @@ class Gutenberg(object):
             message = 'Not downloading as the file {} exists'
             self.logger.debug(message.format(test_filename))
             return
-        
+
         directory = split(self.data_directory)[0]
         self.logger.info('Downloading Danish Gutenberg corpus to {}'.format(
             directory))
