@@ -29,7 +29,8 @@ Examples:
   20-06-2008 Kun nogenlunde amerikansk film om gambling. 13-06-2008
 
 References:
-  http://corpora2.informatik.uni-leipzig.de/download.html
+  - http://corpora.uni-leipzig.de/
+  - http://corpora2.informatik.uni-leipzig.de/download.html
 
 """
 
@@ -189,6 +190,8 @@ class LCC(object):
         """
         local_filename = join(self.data_directory(), filename)
         if not redownload and isfile(local_filename):
+            message = 'Not downloading as it is already download to {}'
+            self.logger.debug(message.format(local_filename))
             return
 
         self.make_data_directory()
