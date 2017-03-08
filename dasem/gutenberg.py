@@ -60,7 +60,7 @@ import logging
 import re
 
 from os import walk, write
-from os.path import join, sep, split
+from os.path import isfile, join, sep, split
 
 import signal
 
@@ -190,6 +190,16 @@ def get_text_by_id(id):
 class Gutenberg(object):
     """Gutenberg.
 
+    Interface to Gutenberg. 
+
+    The data will be mirrored/downloaded to a directory like:
+
+        ~/dasem_data/gutenberg/www.gutenberg.lib.md.us
+
+    In regard to encoding of the Project Gutenberg texts: For instance,
+    10218 is encoded in "ISO Latin-1". This is stated with the line
+    "Character set encoding: ISO Latin-1" in the header of the data file.
+
     Attributes
     ----------
     data_directory : str
@@ -205,12 +215,6 @@ class Gutenberg(object):
         Regular expression pattern.
     word_tokenizer : object with tokenize method
         Object with tokenize method, corresponding to nltk.WordPunctTokenizer.
-
-    Description
-    -----------
-    In regard to encoding of the Project Gutenberg texts: For instance,
-    10218 is encoded in "ISO Latin-1". This is stated with the line
-    "Character set encoding: ISO Latin-1" in the header of the data file.
 
     """
 
@@ -228,7 +232,7 @@ class Gutenberg(object):
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
 
-    def download(self):
+    def download(self, redownload=False):
         r"""Download corpus from Gutenberg homepage.
 
         This method will use the external 'wget' program that is the only
@@ -241,11 +245,25 @@ class Gutenberg(object):
         This method will spawn a subprocess. The 'wget' program needs to be
         installed.
 
+        Parameters
+        ----------
+        redownload : bool, optional
+            If True will attempt to download anew. Otherwise, the method
+            tests whether a specific file exists on the local data directory.
+            If the file exists, then no files are fetch from Gutenberg.
+
         References
         ----------
         https://www.gutenberg.org/wiki/Gutenberg%3aInformation_About_Robot_Access_to_our_Pages
 
         """
+        test_filename = join(self.data_directory, '1', '0', '2', '1', '10218',
+                             '10218-8.zip')
+        if not redownload and isfile(test_filename):
+            message = 'Not downloading as the file {} exists'
+            self.logger.debug(message.format(test_filename))
+            return
+        
         directory = split(self.data_directory)[0]
         self.logger.info('Downloading Danish Gutenberg corpus to {}'.format(
             directory))
@@ -331,7 +349,7 @@ class Gutenberg(object):
         Returns
         -------
         text : str
-            Extracted text.
+            Extracted text. The text is converted to Unicode.
 
         """
         # Example on subdirectory structure:
