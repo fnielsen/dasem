@@ -190,6 +190,8 @@ class Dannet(object):
         """Download data."""
         local_filename = join(self.data_directory(), filename)
         if not redownload and isfile(local_filename):
+            message = 'Not downloading as corpus already download to {}'
+            self.logger.debug(message.format(local_filename))
             return
 
         self.make_data_directory()
@@ -199,6 +201,7 @@ class Dannet(object):
         response = requests.get(url, stream=True)
         with open(local_filename, 'wb') as fid:
             copyfileobj(response.raw, fid)
+        self.logger.debug('Corpus downloaded'.format())
 
     def full_filename(self, filename=DANNET_FILENAME):
         """Prepend data directory path to filename.
