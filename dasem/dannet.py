@@ -4,6 +4,7 @@ Usage:
   dasem.dannet build-sqlite-database [options]
   dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
+  dasem.dannet show-glossary <word> [options]
   dasem.dannet fasttext-most-similar [options] <word>
   dasem.dannet show [options] <dataset>
   dasem.dannet train-and-save-fasttext [options]
@@ -75,7 +76,7 @@ from pandas.io.common import CParserError
 
 import requests
 
-from six import b, text_type
+from six import b, text_type, u
 
 from . import models
 from .config import data_directory
@@ -178,7 +179,8 @@ class Dannet(object):
             full_filename))
         try:
             self._db = DB(filename=full_filename, dbtype='sqlite')
-            if 'words' not in self._db.tables:
+            if not hasattr(self._db.tables, 'words'):
+                self.logger.debug('Database is empty')
                 # There is no content in the database
                 raise Exception('Not initialized')
         except:
@@ -221,6 +223,39 @@ class Dannet(object):
             return filename
         else:
             return join(data_directory(), 'dannet', filename)
+
+    def glossary(self, word):
+        """Return glossary for word.
+
+        Parameters
+        ----------
+        word : str
+            Query word.
+
+        Returns
+        -------
+        glossary : list of str
+            List of distinct strings from `gloss` field of synsets which
+            form matches the query word.
+
+        Examples
+        --------
+        >>> dannet = Dannet()
+        >>> len(dannet.glossary('virksomhed')) == 3
+        True
+
+        """
+        query_template = u("""
+            SELECT DISTINCT s.gloss
+            FROM synsets s, wordsenses ws, words w
+            WHERE s.synset_id = ws.synset_id AND
+                ws.word_id = w.word_id AND w.form = '{word}';""")
+        query = query_template.format(
+            word=word.replace('\\', '\\\\').replace("'", "\\'"))
+        self.logger.debug(u('Querying with {}').format(
+            query.replace('\n', ' ')))
+        glossary = list(self.db.query(query).gloss)
+        return glossary
 
     def iter_sentences(self):
         """Iterate over sentences in the synsets examples.
@@ -575,6 +610,16 @@ def main():
         fast_text = FastText()
         for word, similarity in fast_text.most_similar(word):
             write(output_file, word.encode('utf-8') + b('\n'))
+
+    elif arguments['show-glossary']:
+        word = arguments['<word>']
+        if not isinstance(word, text_type):
+            word = word.decode(input_encoding)
+
+        dannet = Dannet()
+        glossary = dannet.glossary(word)
+        for gloss in glossary:
+            write(output_file, gloss.encode('utf-8') + b('\n'))
 
     elif arguments['train-and-save-fasttext']:
         fast_text = FastText()
