@@ -53,7 +53,7 @@ References:
 """
 
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import logging
 
@@ -70,16 +70,13 @@ from subprocess import call
 
 from zipfile import ZipFile
 
-import gensim
-
 import nltk
 from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
 
-from numpy import zeros
-
 import requests
 
+from . import models
 from .config import data_directory
 from .wikidata import query_to_dataframe
 
@@ -92,8 +89,6 @@ SELECT ?work ?workLabel ?authorLabel ?gutenberg WHERE {
   service wikibase:label { bd:serviceParam wikibase:language "da" }
 }
 """
-
-WORD2VEC_FILENAME = 'gutenberg-word2vec.pkl.gz'
 
 DOWNLOAD_URL = ('http://www.gutenberg.org/robot/harvest?'
                 'filetypes[]=txt&langs[]=da')
@@ -518,7 +513,7 @@ class SentenceWordsIterable():
         return sentences
 
 
-class Word2Vec(object):
+class Word2Vec(models.Word2Vec):
     """Gensim Word2vec for Danish Gutenberg corpus.
 
     Parameters
@@ -549,6 +544,18 @@ class Word2Vec(object):
                 self.train()
                 self.save()
 
+    def data_directory(self):
+        """Return data directory.
+
+        Returns
+        -------
+        directory : str
+            Directory as a string.
+
+        """
+        directory = join(data_directory(), 'gutenberg')
+        return directory
+
     def full_filename(self, filename):
         """Return filename with full filename path."""
         if sep in filename:
@@ -556,176 +563,24 @@ class Word2Vec(object):
         else:
             return join(data_directory(), 'gutenberg', filename)
 
-    def load(self, filename=WORD2VEC_FILENAME):
-        """Load model from pickle file.
-
-        This function is unsafe. Do not load unsafe files.
+    def iterable_sentence_words(self, lower=True, stem=False):
+        """Return iterable for sentence words.
 
         Parameters
         ----------
-        filename : str
-            Filename of pickle file.
-
-        """
-        full_filename = self.full_filename(filename)
-        self.logger.info('Trying to load word2vec model from {}'.format(
-            full_filename))
-        self.model = gensim.models.Word2Vec.load(full_filename)
-
-    def save(self, filename=WORD2VEC_FILENAME):
-        """Save model to pickle file.
-
-        The Gensim load file is used which can also compress the file.
-
-        Parameters
-        ----------
-        filename : str, optional
-            Filename.
-
-        """
-        full_filename = self.full_filename(filename)
-        self.model.save(full_filename)
-
-    def train(self, size=100, window=5, min_count=5, workers=4,
-              translate_aa=True, translate_whitespaces=True, lower=True,
-              stem=False):
-        """Train Gensim Word2Vec model.
-
-        Parameters
-        ----------
-        size : int, default 100
-            Dimension of the word2vec space. Gensim Word2Vec parameter.
-        window : int, default 5
-            Word window size. Gensim Word2Vec parameter.
-        min_count : int, default 5
-            Minimum number of times a word must occure to be included in the
-            model. Gensim Word2Vec parameter.
-        workers : int, default 4
-            Number of Gensim workers.
-        translate_aa : bool, default True
-            Translate double-a to 'bolle-aa'.
-        translate_whitespaces : bool, default True
-            Translate multiple whitespaces to single whitespaces
         lower : bool, default True
             Lower case the words.
         stem : bool, default False
             Apply word stemming. DanishStemmer from nltk is used.
 
-        """
-        sentences = SentenceWordsIterable(
-            translate_aa=translate_aa,
-            translate_whitespaces=translate_whitespaces, lower=lower,
-            stem=stem)
-        self.logger.info(
-            ('Training word2vec model with parameters: '
-             'size={size}, window={window}, '
-             'min_count={min_count}, workers={workers}').format(
-                 size=size, window=window, min_count=min_count,
-                 workers=workers))
-        self.model = gensim.models.Word2Vec(
-            sentences, size=size, window=window, min_count=min_count,
-            workers=workers)
-
-    def doesnt_match(self, words):
-        """Return odd word of list.
-
-        This method forward the matching to the `doesnt_match` method in the
-        Word2Vec class of Gensim.
-
-        Parameters
-        ----------
-        words : list of str
-            List of words represented as strings.
-
         Returns
         -------
-        word : str
-            Outlier word.
-
-        Examples
-        --------
-        >>> w2v = Word2Vec()
-        >>> w2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
-        'stol'
+        sentence_words : iterable
+            Iterable over sentence words
 
         """
-        return self.model.doesnt_match(words)
-
-    def most_similar(self, positive=[], negative=[], topn=10,
-                     restrict_vocab=None, indexer=None):
-        """Return most similar words.
-
-        This method will forward the similarity search to the `most_similar`
-        method in the Word2Vec class in Gensim. The input parameters and
-        returned result are the same.
-
-        Parameters
-        ----------
-        positive : list of str
-            List of strings with words to include for similarity search.
-        negative : list of str
-            List of strings with words to discount.
-        topn : int
-            Number of words to return
-
-        Returns
-        -------
-        words : list of tuples
-            List of 2-tuples with word and similarity.
-
-        Examples
-        --------
-        >>> w2v = Word2Vec()
-        >>> words = w2v.most_similar('studie')
-        >>> len(words)
-        10
-
-        """
-        return self.model.most_similar(
-            positive, negative, topn, restrict_vocab, indexer)
-
-    def similarity(self, word1, word2):
-        """Return value for similarity between two words.
-
-        Parameters
-        ----------
-        word1 : str
-            First word to be compared
-        word2 : str
-            Second word.
-
-        Returns
-        -------
-        value : float
-            Similarity as a float value between 0 and 1.
-
-        """
-        return self.model.similarity(word1, word2)
-
-    def word_vector(self, word):
-        """Return feature vector for word.
-
-        Parameters
-        ----------
-        word : str
-            Word.
-
-        Returns
-        -------
-        vector : np.array
-            Array will values from Gensim's syn0. If the word is not in the
-            vocabulary, then a zero vector is returned.
-
-        """
-        self.model.init_sims()
-        try:
-            vector = self.model[word]
-
-            # Normalized:
-            # vector = self.model.syn0norm[self.model.vocab[word].index, :]
-        except KeyError:
-            vector = zeros(self.model.vector_size)
-        return vector
+        sentence_words = SentenceWordsIterable(lower=lower, stem=stem)
+        return sentence_words
 
 
 def main():
