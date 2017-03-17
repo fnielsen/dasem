@@ -18,6 +18,8 @@ from numpy import argsort, array, dot, newaxis, sqrt, zeros
 
 import fasttext
 
+from .utils import make_data_directory
+
 
 WORD2VEC_FILENAME = 'word2vec.pkl.gz'
 
@@ -271,15 +273,8 @@ class Word2Vec(object):
         self.model = gensim.models.Word2Vec.load(full_filename)
 
     def make_data_directory(self):
-        """Make data directory.
-
-        Raises
-        ------
-        err : NotImplementedError
-            Always raised as a derived class should define it.
-
-        """
-        raise NotImplementedError('Define this in derived class')
+        """Make data directory."""
+        make_data_directory(self.data_directory())
 
     def save(self, filename=WORD2VEC_FILENAME):
         """Save model to pickle file.
