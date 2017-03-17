@@ -2,6 +2,7 @@
 
 Usage:
   dasem.dannet build-sqlite-database [options]
+  dasem.dannet download [options]
   dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
   dasem.dannet show-glossary <word> [options]
@@ -588,6 +589,10 @@ def main():
     elif arguments['build-sqlite-database']:
         dannet = Dannet()
         dannet.build_sqlite_database()
+
+    elif arguments['download']:
+        dannet = Dannet()
+        dannet.download()
 
     elif arguments['fasttext-vector']:
         word = arguments['<word>']
