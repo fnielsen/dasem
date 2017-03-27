@@ -89,6 +89,7 @@ arkitekt|arbejde
 arkitekt|rådgivning
 arkitekt|virksomhed
 aspiration|s|pneumoni
+atom|affald
 auktion|s|virksomhed
 auto|lakering|s|virksomhed
 automekaniker|værksted
@@ -133,6 +134,7 @@ bageri|produkter
 bageri|virksomhed
 bager|virksomhed
 bamse|knus
+bande|rekrutteringen
 bank|konto
 bankier|virksomhed
 barber|maskine
@@ -244,6 +246,7 @@ detail|handel|s|virksomhed
 direktiv|forslag
 distribution|s|virksomhed
 digitalis|molekylerne
+diktatur|stater
 diskotek|s|virksomhed
 dokument|håndtering
 drift|midler
@@ -328,6 +331,7 @@ erhverv|s|uddannelserne
 erhverv|s|uddannelser
 erhverv|s|udlejning
 etage|betegnelse
+evaluering|s|metoder
 event|virksomhed
 export|virksomhed
 fabrikation|s|virksomhed
@@ -352,6 +356,7 @@ fleksydelse|s|ordningen
 flytte|virksomhed
 flåde|reduktion
 folkepension|s|alderen
+folkeskole|elev
 fond|s|mægler|virksomhed
 forbrug|s|artikler
 forhandler|virksomhed
@@ -386,7 +391,9 @@ forskning|s|værktøjer
 forskrift|s|proceduren
 forsyning|s|aktiviteter
 forsyning|s|sikkerhed
+fortolkning|s|muligheder
 fortrydelse|s|ordning
+forvaltning|s|kultur
 forvaltning|s|virksomhed
 foto|arbejde
 foto|artikler
@@ -403,6 +410,8 @@ franchise|virksomhed
 fravalg|s|tidspunktet
 fredskov|s|pligt
 fremgang|s|måden
+fremstilling|s|former
+fremstilling|s|processer
 fremstilling|s|virksomhed
 frisør|artikler
 frisør|branchen
@@ -419,6 +428,7 @@ gartneri|produkter
 gartneri|virksomhed
 genbrug|s|produkter
 gennemførelse|s|beføjelser
+gennemsnit|s|danskers
 glarmester|forretning
 glarmester|virksomhed
 grunddata|register
@@ -572,6 +582,7 @@ kontor|indretning
 kradsning|s|mærker
 kredit|formidling
 kredit|salg
+krænkelse|s|debatten
 kunde|fordringer
 kunstner|repræsentation
 kurer|kørsel
@@ -582,6 +593,7 @@ kurér|virksomhed
 kursus|afholdelse
 kursus|aktiviteter
 kursus|virksomhed
+kvalitet|s|kriterier
 kvalitet|s|udvikling
 kvalitet|s|udviklingen
 kvote|sanktioner
@@ -618,11 +630,15 @@ lovgivning|s|identifikator
 lovgivning|s|programmet
 luft|fotografering
 luft|transport
+lyd|følge|regler
 lys|udstyr
+lytte|formål
 lægemiddel|forgiftninger
 lægemiddel|grupper
 lægemiddel|udvikling
 læge|virksomhed
+læring|s|materiale
+læse|forståelse|s|strategier
 låne|financiering
 låne|formidling
 låne|mulighed
@@ -655,6 +671,7 @@ metal|branchen
 metal|støberi
 miljø|informationer
 miljø|virksomhed
+milliard|skandaler
 mink|branchen
 mink|pelsning|s|industrien
 mink|produktion
@@ -720,6 +737,7 @@ offshore|markedet
 omkostning|s|reduktion
 omkørsel|s|trafik
 ophold|s|status
+oplevelse|s|læsning
 optik|branchen
 optik|forretning
 optiker|virksomhed
@@ -727,14 +745,18 @@ oxygen|mætningen
 operation|s|klinikken
 opioid|forgiftning
 oplysning|s|pligt
+opslag|s|teknologier
 optiker|forretning
 optiker|virksomhed
+oral|sex|kvote
 ordblinde|undervisning
+ord|klasser
 overenskomst|fornyelse
 overgang|s|bestemmelser
 overgang|s|bestemmelserne
 overgang|s|tidspunktet
 oversættelse|s|virksomhed
+overvågning|s|teknologi
 pantebrev|s|handel
 padel|sport
 pakhus|virksomhed
@@ -780,6 +802,7 @@ pension|s|kasse|virksomhed
 pension|s|opgørelsen
 pension|s|regulativ
 personale|udlejning
+person|karakteristik
 plantage|drift
 planteskole|virksomhed
 plastik|produkter
@@ -794,6 +817,7 @@ procent|satsen
 produkt|handel
 produktion|s|virksomhed
 produkt|udvikling
+programmering|s|sproget
 program|udvikling
 projektering|s|virksomhed
 projekt|formidling
@@ -857,7 +881,9 @@ tegning|s|regel
 salg|s|virksomhed
 salicylat|forgiftning
 salg|s|coaching
+samtale|regler
 samtidighedsferie|dage
+samtid|s|litteraturen
 sandsugning|s|fartøjer
 sandwich|bar
 sanitet|s|installationer
@@ -895,6 +921,8 @@ skov|ejendomme
 skov|entreprenør|virksomhed
 skov|lovens
 skov|maskiner
+skrive|strategier
+skrive|teknikker
 slagteri|virksomhed
 slagter|varer
 slagter|virksomhed
@@ -941,6 +969,7 @@ stillads|arbejde
 stillads|materiel
 stillads|montage
 stillads|udlejning
+stormagt|s|drømme
 straf|afsoning
 straffe|bestemmelser
 straf|fuldbyrdelse
@@ -979,6 +1008,7 @@ telemarketing|virksomhed
 termin|s|kontrakter
 textil|branchen
 textil|varer
+tid|s|perspektiv
 tilbagebetaling|s|beløbet
 tilskud|s|bestemmelserne
 trafik|områder
@@ -1030,9 +1060,11 @@ undervisning|s|pligtige
 undervisning|s|tilbud
 undervisning|s|virksomhed
 undervisning|s|ydelser
+udtryk|s|former
 udvikling|s|aktiviteter
 ungdom|s|uddannelser
 ungdom|s|uddannelse|s|institutioner
+valg|muligheder
 valuta|arbitrage
 valuta|forretning
 valuta|termin|s|forretninger
@@ -1071,6 +1103,7 @@ virksomhed|s|ledelse
 virksomhed|s|oplysninger
 virksomhed|s|rådgivning
 virksomhed|s|udøvelse
+visualisering|s|former
 vital|parametre
 vitamin|behov
 vognmand|s|forretning
