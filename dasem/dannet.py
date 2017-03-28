@@ -5,6 +5,7 @@ Usage:
   dasem.dannet download [options]
   dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
+  dasem.dannet get-all-tokenized-sentences [options]
   dasem.dannet show-glossary <word> [options]
   dasem.dannet fasttext-most-similar [options] <word>
   dasem.dannet show [options] <dataset>
@@ -81,6 +82,7 @@ from six import b, text_type, u
 
 from . import models
 from .config import data_directory
+from .corpus import Corpus
 from .utils import make_data_directory
 
 
@@ -93,7 +95,7 @@ DANNET_SQLITE_FILENAME = splitext(DANNET_FILENAME)[0] + '.db'
 DANNET_CSV_ZIP_URL = 'http://www.wordnet.dk/DanNet-2.2_csv.zip'
 
 
-class Dannet(object):
+class Dannet(Corpus):
     """Dannet.
 
     Using the module will automagically download the data from the Dannet
@@ -605,6 +607,11 @@ def main():
     elif arguments['get-all-sentences']:
         dannet = Dannet()
         for sentence in dannet.iter_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
+
+    elif arguments['get-all-tokenized-sentences']:
+        dannet = Dannet()
+        for sentence in dannet.iter_tokenized_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['fasttext-most-similar']:
