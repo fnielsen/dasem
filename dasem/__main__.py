@@ -1,6 +1,7 @@
 """dasem.
 
 Usage:
+   dasem decompound [options] <text>
    dasem most-similar [options] <word>
 
 Options:
@@ -28,6 +29,7 @@ import socket
 from six import b, text_type
 
 from .fullmonty import FastText, Word2Vec
+from .text import Decompounder
 
 
 def main():
@@ -60,7 +62,17 @@ def main():
     output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
-    if arguments['most-similar']:
+    if arguments['decompound']:
+        text = arguments['<text>']
+        if not isinstance(text, text_type):
+            text = text.decode(input_encoding)
+        text = text.lower()
+
+        decompounder = Decompounder()
+        decompounded = decompounder.decompound_text(text)
+        write(output_file, decompounded.encode(output_encoding) + b('\n'))
+
+    elif arguments['most-similar']:
         word = arguments['<word>']
         if not isinstance(word, text_type):
             word = word.decode(input_encoding)
