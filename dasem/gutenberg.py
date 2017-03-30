@@ -6,6 +6,7 @@ Usage:
   dasem.gutenberg get [options] <id>
   dasem.gutenberg get-all-sentences [options]
   dasem.gutenberg get-all-texts [options]
+  dasem.gutenberg get-all-tokenized-sentences [options]
   dasem.gutenberg list-all-ids
   dasem.gutenberg list
   dasem.gutenberg most-similar [options] <word>
@@ -78,6 +79,7 @@ import requests
 
 from . import models
 from .config import data_directory
+from .corpus import Corpus
 from .wikidata import query_to_dataframe
 
 
@@ -182,7 +184,7 @@ def get_text_by_id(id):
     return response.content
 
 
-class Gutenberg(object):
+class Gutenberg(Corpus):
     """Gutenberg.
 
     Interface to Gutenberg.
@@ -634,6 +636,11 @@ def main():
         gutenberg = Gutenberg()
         for text in gutenberg.iter_texts():
             write(output_file, text.encode(encoding) + b('\n'))
+
+    elif arguments['get-all-tokenized-sentences']:
+        gutenberg = Gutenberg()
+        for sentence in gutenberg.iter_tokenized_sentences():
+            write(output_file, sentence.encode(encoding) + b('\n'))
 
     elif arguments['list-all-ids']:
         gutenberg = Gutenberg()
