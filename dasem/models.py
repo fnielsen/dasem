@@ -188,6 +188,9 @@ class FastText(object):
         else:
             raise ValueError('Wrong argument to model_type')
 
+        # Invalidate computed normalized matrix
+        self._normalized_matrix = None
+
     def word_vector(self, word):
         """Return feature vector for word.
 
