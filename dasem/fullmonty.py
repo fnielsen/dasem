@@ -3,6 +3,7 @@
 Usage:
   dasem.fullmonty download [options]
   dasem.fullmonty get-all-sentences [options]
+  dasem.fullmonty get-all-tokenized-sentences [options]
   dasem.fullmonty fasttext-most-similar [options] <word>
   dasem.fullmonty most-similar [options] <word>
   dasem.fullmonty train-and-save-fasttext [options]
@@ -10,6 +11,7 @@ Usage:
 
 Options:
   --debug             Debug messages.
+  -i=<filename>       Input filename
   --ie=encoding       Input encoding [default: utf-8]
   --oe=encoding       Output encoding [default: utf-8]
   -n=<n> | --n=<n>    Number. For most-similar command, the top number
@@ -45,6 +47,7 @@ from six import b, text_type, u
 
 from . import models
 from .config import data_directory
+from .corpus import Corpus
 from .dannet import Dannet
 from .europarl import Europarl
 from .gutenberg import Gutenberg
@@ -52,7 +55,7 @@ from .lcc import LCC
 from .utils import make_data_directory
 
 
-class Fullmonty(object):
+class Fullmonty(Corpus):
     """All corpora.
 
     The corpora included in the Fullmonty aggregated corpora ae
@@ -62,6 +65,8 @@ class Fullmonty(object):
 
     def __init__(self):
         """Setup objects for logger and corpora."""
+        super(self.__class__, self).__init__()
+
         self.logger = logging.getLogger(__name__ + '.Fullmonty')
         self.logger.addHandler(logging.NullHandler())
 
@@ -238,6 +243,8 @@ def main():
     output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
+    input_filename = arguments['-i']
+
     if arguments['download']:
         fullmonty = Fullmonty()
         fullmonty.download()
@@ -259,6 +266,11 @@ def main():
     elif arguments['get-all-sentences']:
         fullmonty = Fullmonty()
         for sentence in fullmonty.iter_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
+
+    elif arguments['get-all-tokenized-sentences']:
+        fullmonty = Fullmonty()
+        for sentence in fullmonty.iter_tokenized_sentences():
             write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['most-similar']:
@@ -286,7 +298,10 @@ def main():
 
     elif arguments['train-and-save-fasttext']:
         fast_text = FastText(autosetup=False)
-        fast_text.train()
+        if input_filename:
+            fast_text.train(input_filename=input_filename)
+        else:
+            fast_text.train()
 
     elif arguments['train-and-save-word2vec']:
         word2vec = Word2Vec(autosetup=False)
