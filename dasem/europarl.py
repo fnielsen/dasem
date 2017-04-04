@@ -4,6 +4,7 @@ Usage:
   dasem.europarl download [options]
   dasem.europarl get-all-sentence-words [options]
   dasem.europarl get-all-sentences [options]
+  dasem.europarl get-all-tokenized-sentences [options]
 
 Options:
   --debug             Debug messages.
@@ -49,6 +50,7 @@ from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
 
 from .config import data_directory
+from .corpus import Corpus
 from .utils import make_data_directory
 
 
@@ -60,8 +62,17 @@ DANISH_FILENAME = 'europarl-v7.da-en.da'
 TGZ_PARALLEL_CORPUS_URL = "http://www.statmt.org/europarl/v7/da-en.tgz"
 
 
-class Europarl(object):
-    """Europarl corpus."""
+class Europarl(Corpus):
+    """Europarl corpus.
+
+    Examples
+    --------
+    >>> europarl = Europarl()
+    >>> sentence = next(europarl.iter_tokenized_sentences())
+    >>> "sessionen" in sentence.split()
+    True
+
+    """
 
     def __init__(self, danish_filename=DANISH_FILENAME,
                  tar_gz_filename=TGZ_PARALLEL_CORPUS_FILENAME):
@@ -186,7 +197,7 @@ def main():
     else:
         # stdout
         output_file = 1
-    encoding = arguments['--oe']
+    output_encoding = arguments['--oe']
     separator = u(arguments['--separator'])
 
     # Ignore broken pipe errors
@@ -200,12 +211,17 @@ def main():
         europarl = Europarl()
         for word_list in europarl.iter_sentence_words():
             write(output_file,
-                  separator.join(word_list).encode(encoding) + b('\n'))
+                  separator.join(word_list).encode(output_encoding) + b('\n'))
 
     elif arguments['get-all-sentences']:
         europarl = Europarl()
         for sentence in europarl.iter_sentences():
-            write(output_file, sentence.encode(encoding) + b('\n'))
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
+
+    elif arguments['get-all-tokenized-sentences']:
+        europarl = Europarl()
+        for sentence in europarl.iter_tokenized_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     else:
         assert False
