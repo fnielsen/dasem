@@ -1,6 +1,7 @@
 """lcc - Leipzig Corpora Collection.
 
 Usage:
+  dasem.lcc get-all-tokenized-sentences [options]
   dasem.lcc data-directory
   dasem.lcc download
   dasem.lcc download-file <file>
@@ -56,6 +57,7 @@ from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
 
 from .config import data_directory
+from .corpus import Corpus
 from .utils import make_data_directory
 from . import models
 
@@ -146,7 +148,7 @@ class LCCFile(object):
             yield words
 
 
-class LCC(object):
+class LCC(Corpus):
     """Leipzig Corpora Collection interface.
 
     References
@@ -155,6 +157,13 @@ class LCC(object):
     - Quasthoff, U.; M. Richter; C. Biemann: Corpus Portal for Search in
       Monolingual Corpora, Proceedings of the fifth international conference
       on Language Resources and Evaluation, LREC 2006, Genoa, pp. 1799-1802
+
+    Examples
+    --------
+    >>> lcc = LCC()
+    >>> sentence = next(lcc.iter_tokenized_sentences())
+    >>> "ikke" in sentence.split()
+    True
 
     """
 
@@ -359,6 +368,11 @@ def main():
         filename = arguments['<file>']
         lcc = LCC()
         lcc.download_file(filename)
+
+    elif arguments['get-all-tokenized-sentences']:
+        lcc = LCC()
+        for sentence in lcc.iter_tokenized_sentences():
+            write(output_file, sentence.encode(output_encoding) + b('\n'))
 
     elif arguments['get-sentence-words']:
         filename = arguments['<file>']
