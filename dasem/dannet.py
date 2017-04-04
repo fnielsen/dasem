@@ -12,9 +12,10 @@ Usage:
   dasem.dannet train-and-save-fasttext [options]
 
 Options:
-  --debug       Debug messages
-  -h --help     Help message
-  --ie=encoding     Input encoding [default: utf-8]
+  --debug             Debug messages
+  -h --help           Help message
+  -i --input=<file>   Input filename
+  --ie=encoding       Input encoding [default: utf-8]
   --oe=encoding       Output encoding [default: utf-8]
   -o --output=<file>  Output filename, default output to stdout
   -v --verbose  Verbose informational messages
@@ -561,6 +562,9 @@ def main():
     else:
         # stdout
         output_file = 1
+
+    input_filename = arguments['--input']
+
     output_encoding = arguments['--oe']
     input_encoding = arguments['--ie']
 
@@ -635,7 +639,10 @@ def main():
 
     elif arguments['train-and-save-fasttext']:
         fast_text = FastText()
-        fast_text.train()
+        if input_filename:
+            fast_text.train(input_filename=input_filename)
+        else:
+            fast_text.train()
 
 
 if __name__ == '__main__':
