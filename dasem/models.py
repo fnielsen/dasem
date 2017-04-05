@@ -8,6 +8,8 @@ Usage:
 
 from __future__ import absolute_import, division, print_function
 
+from abc import ABCMeta
+
 import logging
 
 import gensim
@@ -16,6 +18,8 @@ from os.path import join, sep
 
 from numpy import argsort, array, dot, newaxis, sqrt, zeros
 
+from six import with_metaclass
+
 import fasttext
 
 from .utils import make_data_directory
@@ -23,10 +27,177 @@ from .utils import make_data_directory
 
 WORD2VEC_FILENAME = 'word2vec.pkl.gz'
 
+DOC2VEC_FILENAME = 'doc2vec.pkl.gz'
+
 SENTENCES_FILENAME = 'sentences.txt'
 
 FAST_TEXT_SKIPGRAM_MODEL_FILENAME = 'fasttext-skipgram-model'
 FAST_TEXT_CBOW_MODEL_FILENAME = 'fasttext-cbow-model'
+
+
+class Doc2Vec(with_metaclass(ABCMeta)):
+    """Gensim Doc2vec for a corpus."""
+
+    def __init__(self, autosetup=True):
+        """Setup model.
+        Parameters
+        ----------
+        autosetup : bool, optional
+            Determines whether the DocVec model should be autoloaded.
+
+        """
+        self.logger = logging.getLogger(__name__ + '.Doc2Vec')
+        self.logger.addHandler(logging.NullHandler())
+
+        self.model = None
+        if autosetup:
+            try:
+                self.load()
+            except:
+                self.train()
+                self.save()
+
+    def data_directory(self):
+        """Return data directory.
+
+        Raises
+        ------
+        err : NotImplementedError
+            Always raised as a derived class should define it.
+
+        """
+        raise NotImplementedError('Define this in derived class')
+
+    def full_filename(self, filename):
+        """Return filename with full filename path."""
+        if sep in filename:
+            return filename
+        else:
+            return join(self.data_directory(), filename)
+
+    def iterable_sentence_words(self):
+        """Yield list of sentence words.
+
+        Raises
+        ------
+        err : NotImplementedError
+            Always raised as a derived class should define it.
+
+        """
+        raise NotImplementedError("Define this in derived class")
+
+    def load(self, filename=DOC2VEC_FILENAME):
+        """Load model from pickle file.
+
+        This function is unsafe. Do not load unsafe files.
+        Parameters
+        ----------
+        filename : str
+            Filename of pickle file.
+        """
+        full_filename = self.full_filename(filename)
+        self.logger.info('Loading doc2vec model from {}'.format(
+            full_filename))
+        self.model = gensim.models.Doc2Vec.load(full_filename)
+
+    def save(self, filename=DOC2VEC_FILENAME):
+        """Save model to pickle file.
+        The Gensim load file is used which can also compress the file.
+        Parameters
+        ----------
+        filename : str, optional
+            Filename.
+        """
+        full_filename = self.full_filename(filename)
+        self.model.save(full_filename)
+
+    def train(self, size=100, window=8, min_count=5, workers=4):
+        """Train Gensim Doc2Vec model.
+
+        Parameters
+        ----------
+        size : int, optional
+            Dimension of the word2vec space.
+        """
+        tagged_documents = self.iterable_tagged_documents()
+        self.model = gensim.models.Doc2Vec(
+            tagged_documents, size=size, window=window, min_count=min_count,
+            workers=workers)
+
+    def doesnt_match(self, words):
+        """Return odd word of list.
+
+        This method forward the matching to the `doesnt_match` method in the
+        Word2Vec class of Gensim.
+
+        Parameters
+        ----------
+        words : list of str
+            List of words represented as strings.
+
+        Returns
+        -------
+        word : str
+            Outlier word.
+
+        Examples
+        --------
+        >>> d2v = Doc2Vec()
+        >>> d2v.doesnt_match(['svend', 'stol', 'ole', 'anders'])
+        'stol'
+
+        """
+        return self.model.doesnt_match(words)
+
+    def most_similar(self, positive=[], negative=[], topn=10,
+                     restrict_vocab=None, indexer=None):
+        """Return most similar words.
+
+        This method will forward the similarity search to the `most_similar`
+        method in the Doc2Vec class in Gensim. The input parameters and
+        returned result are the same.
+
+        Parameters
+        ----------
+        positive : list of str
+            List of strings with words to include for similarity search.
+        negative : list of str
+            List of strings with words to discount.
+        topn : int
+            Number of words to return
+        Returns
+        -------
+        words : list of tuples
+            List of 2-tuples with word and similarity.
+
+        Examples
+        --------
+        >>> d2v = Doc2Vec()
+        >>> words = w2v.most_similar('studieretning')
+        >>> len(words)
+        10
+
+        """
+        return self.model.most_similar(
+            positive, negative, topn, restrict_vocab, indexer)
+
+    def similarity(self, word1, word2):
+        """Return value for similarity between two words.
+
+        Parameters
+        ----------
+        word1 : str
+            First word to be compared
+        word2 : str
+            Second word.
+
+        Returns
+        -------
+        value : float
+            Similarity as a float value between 0 and 1.
+
+        """
+        return self.model.similarity(word1, word2)
 
 
 class FastText(object):
