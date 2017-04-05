@@ -2,6 +2,7 @@
 
 Usage:
   dasem.dannet build-sqlite-database [options]
+  dasem.dannet doc2vec-most-similar [options] <document>
   dasem.dannet download [options]
   dasem.dannet fasttext-vector [options] <word>
   dasem.dannet get-all-sentences [options]
@@ -9,6 +10,7 @@ Usage:
   dasem.dannet show-glossary <word> [options]
   dasem.dannet fasttext-most-similar [options] <word>
   dasem.dannet show [options] <dataset>
+  dasem.dannet train-and-save-doc2vec [options]
   dasem.dannet train-and-save-fasttext [options]
 
 Options:
@@ -69,6 +71,8 @@ from sys import version_info
 
 from zipfile import ZipFile
 
+from gensim.models.doc2vec import TaggedDocument
+
 from db import DB
 
 from nltk.stem.snowball import DanishStemmer
@@ -96,7 +100,28 @@ DANNET_SQLITE_FILENAME = splitext(DANNET_FILENAME)[0] + '.db'
 DANNET_CSV_ZIP_URL = 'http://www.wordnet.dk/DanNet-2.2_csv.zip'
 
 
-class Dannet(Corpus):
+class DataDirectoryMixin(object):
+    """Class to specify data directory.
+
+    This class should have first inheritance, so that its `data_directory`
+    method is calle before the abstract class.
+
+    """
+
+    def data_directory(self):
+        """Return diretory where data should be.
+
+        Returns
+        -------
+        directory : str
+            Directory.
+
+        """
+        directory = join(data_directory(), 'dannet')
+        return directory
+
+
+class Dannet(Corpus, DataDirectoryMixin):
     """Dannet.
 
     Using the module will automagically download the data from the Dannet
@@ -159,18 +184,6 @@ class Dannet(Corpus):
         self.stemmer = DanishStemmer()
 
         self._db = None
-
-    def data_directory(self):
-        """Return diretory where data should be.
-
-        Returns
-        -------
-        directory : str
-            Directory.
-
-        """
-        directory = join(data_directory(), 'dannet')
-        return directory
 
     @property
     def db(self):
@@ -510,25 +523,63 @@ class Dannet(Corpus):
                 df.to_sql(table, con=connection, if_exists=if_exists)
 
 
-class FastText(models.FastText):
+class TaggedDocumentsIterable(object):
+    """Iterable for words in a sentence.
+
+    Parameters
+    ----------
+    lower : bool, default True
+        Lower case the words.
+    stem : bool, default False
+        Apply word stemming. DanishStemmer from nltk is used.
+
+    """
+
+    def __init__(self, lower=True, stem=False):
+        """Setup options."""
+        self.lower = lower
+        self.stem = stem
+
+    def __iter__(self):
+        """Restart and return iterable."""
+        dannet = Dannet()
+        for n, sentence_words in enumerate(dannet.iter_sentence_words(
+                lower=self.lower, stem=self.stem)):
+            tagged_document = TaggedDocument(sentence_words, [n])
+            yield tagged_document
+
+
+class Doc2Vec(DataDirectoryMixin, models.Doc2Vec):
+    """Doc2Vec model for the Dannet corpus."""
+
+    def iterable_tagged_documents(self, lower=True, stem=False):
+        """Return iterable for sentence words.
+
+        Parameters
+        ----------
+        lower : bool, default True
+            Lower case the words.
+        stem : bool, default False
+            Apply word stemming. DanishStemmer from nltk is used.
+
+        Returns
+        -------
+        sentence_words : iterable
+            Iterable over sentence words
+
+        """
+        tagged_documents = TaggedDocumentsIterable(lower=lower, stem=stem)
+        return tagged_documents
+
+
+class FastText(DataDirectoryMixin, models.FastText):
     """FastText on Dannet corpus.
 
     It requires that a file called `sentences.txt` is available in the data
     directory.
 
     """
-
-    def data_directory(self):
-        """Return data directory.
-
-        Returns
-        -------
-        directory : str
-            Directory for data.
-
-        """
-        directory = join(data_directory(), 'dannet')
-        return directory
+    pass
 
 
 def main():
@@ -596,6 +647,15 @@ def main():
         dannet = Dannet()
         dannet.build_sqlite_database()
 
+    elif arguments['doc2vec-most-similar']:
+        document = arguments['<document>']
+        if not isinstance(document, text_type):
+            document = document.decode(input_encoding)
+
+        doc2vec = Doc2Vec()
+        for word, similarity in doc2vec.most_similar(document.split()):
+            write(output_file, word.encode('utf-8') + b('\n'))
+
     elif arguments['download']:
         dannet = Dannet()
         dannet.download()
@@ -637,12 +697,23 @@ def main():
         for gloss in glossary:
             write(output_file, gloss.encode('utf-8') + b('\n'))
 
+    elif arguments['train-and-save-doc2vec']:
+        doc2vec = Doc2Vec()
+        if input_filename:
+            doc2vec.train(input_filename=input_filename)
+        else:
+            doc2vec.train()
+
     elif arguments['train-and-save-fasttext']:
         fast_text = FastText()
         if input_filename:
             fast_text.train(input_filename=input_filename)
         else:
             fast_text.train()
+
+    else:
+        # Coding error if we arrive here
+        assert False
 
 
 if __name__ == '__main__':
