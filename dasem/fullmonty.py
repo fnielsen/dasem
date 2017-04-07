@@ -33,15 +33,23 @@ Examples:
 
 from __future__ import absolute_import, division, print_function
 
+import codecs
+
+from collections import Counter
+
 from itertools import chain
 
 import logging
 
+from math import log
+
 import os
 from os import write
-from os.path import join
+from os.path import join, sep
 
 import signal
+
+from nltk.tokenize import WordPunctTokenizer
 
 from six import b, text_type, u
 
@@ -53,6 +61,51 @@ from .europarl import Europarl
 from .gutenberg import Gutenberg
 from .lcc import LCC
 from .utils import make_data_directory
+
+
+TOKENIZED_SENTENCES_FILENAME = 'tokenized_sentences.txt'
+
+WORD_COUNTS_FILENAME = 'word_counts.txt'
+
+
+class DataDirectoryMixin(object):
+    """Class to specify data directory.
+
+    This class should have first inheritance, so that its `data_directory`
+    method is calle before the abstract class.
+
+    """
+
+    def data_directory(self):
+        """Return diretory where data should be.
+
+        Returns
+        -------
+        directory : str
+            Directory.
+
+        """
+        directory = join(data_directory(), 'fullmonty')
+        return directory
+
+    def full_filename(self, filename):
+        """Prepend data directory path to filename.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of local file.
+
+        Returns
+        -------
+        full_filename : str
+            Filename with full directory path information.
+
+        """
+        if sep in filename:
+            return filename
+        else:
+            return join(self.data_directory(), filename)
 
 
 class Fullmonty(Corpus):
@@ -160,6 +213,23 @@ class FastText(models.FastText):
         return directory
 
 
+class TokenizedSentences(DataDirectoryMixin):
+
+    def __init__(self, filename=TOKENIZED_SENTENCES_FILENAME):
+        self.logger = logging.getLogger(__name__ + '.TokenizedSentences')
+        self.logger.addHandler(logging.NullHandler())
+
+        self.filename = self.full_filename(filename)
+
+    def count_words(self):
+        words = []
+        with codecs.open(self.filename, encoding='utf-8') as fid:
+            for line in fid:
+                words.extend(line.split())
+        word_counts = Counter(words)
+        return word_counts
+
+
 class Word2Vec(models.Word2Vec):
     """Word2Vec model with automated load of all corpora.
 
@@ -209,6 +279,112 @@ class Word2Vec(models.Word2Vec):
     def make_data_directory(self):
         """Make data directory for fullmonty."""
         make_data_directory(data_directory(), 'fullmonty')
+
+
+class WordCounts(DataDirectoryMixin):
+    """Word counts.
+
+    Parameters
+    ----------
+    filename : str, optional
+        Filename of word counts file.
+
+    """
+
+    def __init__(self, filename=WORD_COUNTS_FILENAME):
+        """Setup counts."""
+        self.filename = self.full_filename(filename)
+
+        # Setup counts
+        try:
+            self.load_counts()
+        except IOError:
+            self.setup_counts_from_tokenized_sentences()
+            self.save_counts()
+
+        self.word_tokenizer = WordPunctTokenizer()
+
+    def load_counts(self):
+        """Load word count data."""
+        with codecs.open(self.filename, encoding='utf-8') as fid:
+            self._word_counts = Counter(
+                {word: int(count)
+                 for count, word in (line.split() for line in fid)})
+        self.setup_count_sum()
+
+    def save_counts(self):
+        """Save word counts data."""
+        with codecs.open(self.filename, 'w', encoding='utf-8') as fid:
+            for word, count in self._word_counts.items():
+                fid.write(u('{} {}\n').format(count, word))
+
+    def setup_count_sum(self):
+        self._count_sum = sum(self._word_counts.values())
+
+    def setup_counts_from_tokenized_sentences(self):
+        """Count and set words in tokenized sentences."""
+        tokenized_sentences = TokenizedSentences()
+        self._word_counts = tokenized_sentences.count_words()
+        self.setup_count_sum()
+
+    def word_surprisal_bits(self, word):
+        """Return surprisal for word in bits.
+
+        Parameters
+        ----------
+        word : str
+            Word as string.
+
+        Returns
+        -------
+        bits : float
+            surprisal as bits
+
+        References
+        ----------
+        - https://en.wikipedia.org/wiki/Self-information
+
+        Examples
+        --------
+        >>> word_counts = WordCounts()
+        >>> word_counts.word_surprisal_bits('at') < 10
+        True
+
+        >>> word_counts.word_surprisal_bits('rekrutteringsrunde') > 10
+        True
+
+        """
+        # Add a prior on 1 for all words
+        bits = - log((self._word_counts[word] + 1) /
+                     (self._count_sum + len(self._word_counts)), 2)
+        return bits
+
+    def extract_keywords(self, text, top_n=10):
+        """Extract keywords from text.
+
+        The method is based on surprisal.
+
+        Parameters
+        ----------
+        text : str
+            Text with words
+        top_n : int, optional
+            Number of words to return.
+
+        Returns
+        -------
+        top_words : list of str
+            List of string for words with highest surprisal.
+
+        """
+        words = list(set(word.lower()
+                         for word in self.word_tokenizer.tokenize(text)))
+        surprisals = [self.word_surprisal_bits(word) for word in words]
+
+        indices = sorted(range(len(surprisals)),
+                         key=lambda i: -surprisals[i])[:top_n]
+        top_words = [words[i] for i in indices]
+        return top_words
 
 
 def main():
