@@ -88,8 +88,11 @@ arbejd|s|tager
 arkitekt|arbejde
 arkitekt|rådgivning
 arkitekt|virksomhed
+arm|bånd|s|ur
 aspiration|s|pneumoni
+aspirin|doser
 atom|affald
+atom|program
 auktion|s|virksomhed
 auto|lakering|s|virksomhed
 automekaniker|værksted
@@ -108,6 +111,7 @@ auto|reservedele
 auto|tilbehør
 auto|udlejning
 auto|udstyr
+avis|abonnement
 baby|alarm
 baby|bio
 baby|ble
@@ -134,6 +138,7 @@ bageri|produkter
 bageri|virksomhed
 bager|virksomhed
 bamse|knus
+banan|fluernes
 bande|rekrutteringen
 bank|konto
 bankier|virksomhed
@@ -185,6 +190,7 @@ blikkenslager|forretning
 blikkenslager|virksomhed
 blod|kredsløb
 blod|plade
+blod|trykket
 blæk|klat
 bog|binderi|virksomhed
 bog|bus
@@ -198,6 +204,7 @@ booking|virksomhed
 bolig|registret
 bombe|eksplosioner
 bopæl|s|kommunen
+borgmester|post
 bort|forpagtet
 brand|instrukser
 bremse|væske
@@ -227,6 +234,9 @@ cafeteria|virksomhed
 cafe|drift
 cafe|virksomhed
 café|virksomhed
+celle|kernen
+celle|produktion
+celle|strukturer
 computer|programmering
 cykel|branchen
 cykel|tilbehør
@@ -339,6 +349,7 @@ factoring|virksomhed
 fag|applikationer
 faktura|belåning
 fastfood|virksomhed
+feedback|sløjfe
 ferie|dagpengenes
 ferie|dagpenge|retten
 ferie|godtgørelse
@@ -348,11 +359,13 @@ finansiering|s|bidrag|s|pligt
 finansiering|s|bidrag
 finansiering|s|rådgivning
 finansiering|s|virksomhed
+finans|ordfører
 firmapensionskasselovens
 fiskeri|politik
 fleksibilitet|s|klausul
 fleksydelse|s|bidrag 
 fleksydelse|s|ordningen
+fly|rejse
 flytte|virksomhed
 flåde|reduktion
 folkepension|s|alderen
@@ -391,6 +404,7 @@ forskning|s|værktøjer
 forskrift|s|proceduren
 forsyning|s|aktiviteter
 forsyning|s|sikkerhed
+forsvar|s|kapacitet
 fortolkning|s|muligheder
 fortrydelse|s|ordning
 forvaltning|s|kultur
@@ -417,6 +431,7 @@ frisør|artikler
 frisør|branchen
 frisør|forretning
 frisør|virksomhed
+fritid|s|borgmester
 frysehus|virksomhed
 fuldtid|s|forsikrede
 fysioterapeut|virksomhed
@@ -441,11 +456,14 @@ handle|s|virksomhed
 handling|s|planen
 hardware|produkter
 have|artikler
+havne|busser
+helbred|s|risici
 helsekost|produkter
 herreekvipering|s|forretning
 heste|foder
 hjemmeside|programmering
 hjerne|infarkt
+hjerte|operation
 holding|aktiviteter
 holding|s|aktiviteter
 holding|s|selskab
@@ -456,6 +474,7 @@ hospital|s|artikler
 hospital|s|virksomhed
 hoved|beskæftigelse
 hoved|love
+hoved|rengøring
 hud|forandringer
 husnummer|skilte
 hyre|kørsel
@@ -515,9 +534,11 @@ isenkræmmer|forretning
 is|maskiner
 isolering|s|virksomhed
 iværksætter|selskabets
+jagt|ulykke
 job|præmie
 jordbrug|s|drift
 juletræ|s|plantage
+juvel|besat
 kalender|årets
 kantine|branchen
 kantine|virksomhed
@@ -545,6 +566,7 @@ kloak|virksomhed
 klub|tilbud
 kemikalie|transport
 knogle|opbygning
+kolesterol|sænkende
 kombination|s|forsikrede
 kommandit|anparter
 kommandit|aktier
@@ -582,6 +604,8 @@ kontor|indretning
 kradsning|s|mærker
 kredit|formidling
 kredit|salg
+krop|s|temperatur
+krop|s|ur
 krænkelse|s|debatten
 kunde|fordringer
 kunstner|repræsentation
@@ -604,6 +628,7 @@ køle|installationer
 køler|væske
 køreskole|virksomhed
 kørsel|s|virksomhed
+laboratorie|population
 laboratorie|virksomhed
 lager|virksomhed
 landbrug|s|maskiner
@@ -633,6 +658,7 @@ luft|transport
 lyd|følge|regler
 lys|udstyr
 lytte|formål
+læge|forskere
 lægemiddel|forgiftninger
 lægemiddel|grupper
 lægemiddel|udvikling
@@ -669,9 +695,11 @@ mekaniker|værksted
 menneske|rettigheder
 metal|branchen
 metal|støberi
+miljø|dagsorden
 miljø|informationer
 miljø|virksomhed
 milliard|skandaler
+mimose|planter
 mink|branchen
 mink|pelsning|s|industrien
 mink|produktion
@@ -726,6 +754,9 @@ nedrivning|s|virksomhed
 netto|udgift
 netværk|s|administration
 nitte|maskiner
+nobel|komiteen
+nobel|pris|vindere
+nyhed|s|bureau
 nyre|insufficiens
 næring|s|virksomhed
 nøgle|håndtering
@@ -738,9 +769,11 @@ omkostning|s|reduktion
 omkørsel|s|trafik
 ophold|s|status
 oplevelse|s|læsning
+opmærksomhed|s|røvende
 optik|branchen
 optik|forretning
 optiker|virksomhed
+oxygen|forbindelser
 oxygen|mætningen
 operation|s|klinikken
 opioid|forgiftning
@@ -813,6 +846,7 @@ portefølje|selskaber
 portefølje|investering
 postordre|virksomhed
 postnummer|områder
+presse|møde
 procent|satsen
 produkt|handel
 produktion|s|virksomhed
@@ -831,11 +865,13 @@ rederi|virksomhed
 reference|perioden
 refusion|s|beløb
 regel|database
+regering|s|chef
 regional|politik
 register|oplysninger
 regnskab|s|assistance
 regnskab|s|udarbejdelse
 regnskab|s|virksomhed
+reference|ramme
 rejsebureau|virksomhed
 reklame|bureau|virksomhed
 reklame|formidling
@@ -870,6 +906,7 @@ revision|s|virksomhed
 revision|s|virksomheders
 revisor|virksomhed
 risiko|spredning
+rotation|s|cyklusser
 rutebus|kørsel
 rådgiver|virksomhed
 rådgivning|s|arbejde
@@ -913,8 +950,10 @@ skade|s|forsikring|s|virksomhed
 skib|s|begraftning|s|virksomhed
 skib|s|agentur
 skibsfart|s|virksomhed
+skifte|hold|s|arbejde
 skilte|produktion
 skilte|virksomhed
+skole|forhold
 skole|kommunen
 skov|ejendom
 skov|ejendomme
@@ -931,6 +970,7 @@ smede|branchen
 smede|forretning
 smede|virksomhed
 smede|mester|virksomhed
+smykke|sten
 snedker|arbejder
 snedker|branchen
 snedker|virksomhed
@@ -952,6 +992,7 @@ spedition|s|forretning
 spedition|s|forretninger
 spedition|s|virksomhed
 speditør|virksomhed
+spids|kandidater
 spildevand|s|forsyning
 spildevand|s|forsyningen
 spildevand|s|forsyning|s|aktivitetet
@@ -982,11 +1023,14 @@ støberi|virksomhed
 stål|montage
 stål|varer
 sundhed|s|produkter
+svømme|hal
 sygehus|apoteker
 syre|base|forstyrrelser
 sø|forsikring
 sømand|s|mission
 sømand|s|missions
+søvn|mønstre
+søvn|rytme
 tagdækker|virksomhed
 tag|entrepriser
 tag|dækning|s|virksomhed
@@ -1009,6 +1053,7 @@ termin|s|kontrakter
 textil|branchen
 textil|varer
 tid|s|perspektiv
+tid|s|zoner
 tilbagebetaling|s|beløbet
 tilskud|s|bestemmelserne
 trafik|områder
@@ -1019,6 +1064,7 @@ transport|forretning
 transport|området
 transport|sikkerheden
 transport|virksomhed
+tryghed|s|vagter
 trykkeri|virksomhed
 tryksag|s|produktion
 turist|arbejde
@@ -1064,6 +1110,9 @@ udtryk|s|former
 udvikling|s|aktiviteter
 ungdom|s|uddannelser
 ungdom|s|uddannelse|s|institutioner
+ur-krop|s|gen
+ur|mekanismer
+urværk|s|komponenter
 valg|muligheder
 valuta|arbitrage
 valuta|forretning
@@ -1086,6 +1135,8 @@ ventilation|s|branchen
 ventilation|s|virksomhed
 ventilation|s|rensning
 ventrikel|retention
+verden|s|freden
+vice|direktør
 vidensdeling|s|systemer
 video|distribution
 video|gengivelser
@@ -1114,6 +1165,7 @@ voksen|uddannelse
 voksen|uddannelse|s|støtte
 væddeløb|s|heste
 vækst|ministeren
+vælger|mødet
 værdipapir|besiddelse
 værksted|s|drift
 værksted|s|virksomhed
@@ -1128,6 +1180,11 @@ web|løsninger
 web|platform
 web|portaler
 ydelse|s|beløbet
+yder|timer
 ægtefælle|deltagelse
 ægtefælle|pension
+ældre|klubber
+ældre|pleje
+ældre|politik
 ændring|s|forslag
+øjen|kontakt
