@@ -89,6 +89,7 @@ arbejd|s|ophøret
 arbejd|s|perioderne
 arbejd|s|ro
 arbejd|s|tager
+arbejd|s|tøj
 arkitekt|arbejde
 arkitekt|rådgivning
 arkitekt|virksomhed
@@ -217,6 +218,7 @@ bremse|væske
 bryggeri|virksomhed
 brød|udsalg
 brøndborer|virksomhed
+buffet|retter
 bus|virksomhed
 butik|s|drift
 butik|s|handel
@@ -235,6 +237,7 @@ bygning|s|håndværk
 bygning|s|rådgivning
 bygning|s|service
 bygning|s|snedker|virksomhed
+bøde|forlæg
 børnepasning|s|orlov
 cafeteria|virksomhed
 cafe|drift
@@ -291,8 +294,10 @@ efterløn|s|perioden
 egen|kontrol
 egen|kontrol|dokumentation
 egen|kontrol|eksempel|program
+egen|kontrol|procedurer
 egen|kontrol|program
 egen|kontrol|program|s|procedurer
+egen|kontrol|resultater
 ejendom|s|administration
 ejendom|s|administration|s|virksomhed
 ejendom|s|besiddelse
@@ -312,9 +317,14 @@ ejer|rettigheder
 ejer|besiddelser
 ejer|forhold
 eksamen|s|kravene
-eksport|forretninger
-eksport|virksomhed
+eksport|bekendtgørelsen
+eksport|certifikater
 eksport|egen|kontrol|programmet
+eksport|forretninger
+eksport|procedurer
+eksport|vejledning
+eksport|virksomhed
+eksport|virksomheder
 el|arbejder
 el|branchen
 elektriker|virksomhed
@@ -356,6 +366,8 @@ erhverv|s|rådgivning
 erhverv|s|uddannelserne
 erhverv|s|uddannelser
 erhverv|s|udlejning
+erstatning|s|certifikat
+erstatning|s|certifikater
 etage|betegnelse
 evaluering|s|metoder
 event|virksomhed
@@ -393,6 +405,7 @@ folkepension|s|alderen
 folkeskole|elev
 fond|s|mægler|virksomhed
 forbrug|s|artikler
+forbud|s|skrivelse
 forhandler|virksomhed
 forlag|s|virksomhed
 forlag|s|virksomheder
@@ -462,6 +475,8 @@ fysioterapi|klinik
 fysioterapi|virksomhed
 fælles|foreningen
 færdsel|s|arealer
+fødevare|sikkerhed
+fødevare|sikkerheden
 fødevare|styrelse
 fødevare|kontakt|materialer
 fødevare|kontak|materialers
@@ -526,6 +541,7 @@ import|handel
 import|virksomhed
 indberetning|s|perioder
 indbetaling|s|pligtige
+indgang|s|partiet
 indkomst|begrænsninger 
 indkomst|register
 indretning|s|virksomhed
@@ -668,14 +684,17 @@ købmand|s|virksomhed
 køb|s|moms
 køle|installationer
 køle|krav|opbevaring|s|temperatur
+køle|opbevaring
 køle|opbevaring|s|faciliteter
 køle|opbevaring|s|temperaturer
 køle|rum|s|opbevaring|s|temperatur
 køler|væske
+køleskab|s|liste
 køreskole|virksomhed
 kørsel|s|virksomhed
 laboratorie|population
 laboratorie|virksomhed
+lager|lokale
 lager|virksomhed
 landbrug|s|maskiner
 land|inspektør|virksomhed
@@ -711,6 +730,7 @@ lægemiddel|udvikling
 læge|virksomhed
 læring|s|materiale
 læse|forståelse|s|strategier
+løsning|s|forslag
 låne|financiering
 låne|formidling
 låne|mulighed
@@ -732,6 +752,7 @@ maskin|forreting
 maskin|service
 maskin|station|s|virksomhed
 maskin|virksomhed
+materiale|valg
 medlemskab|s|periode
 medlem|s|landene
 medlem|s|staterne
@@ -754,6 +775,7 @@ minimum|s|standarder
 minimum|s|standarderne
 modtage|lager|registreringer
 modtager|kontrol
+modtager|landets
 montage|arbejde
 montage|arbejder
 montage|opgaver
@@ -834,6 +856,7 @@ oplysning|s|pligt
 opslag|s|teknologier
 optiker|forretning
 optiker|virksomhed
+opvaske|maskine
 oral|sex|kvote
 ordblinde|undervisning
 ord|klasser
@@ -908,11 +931,14 @@ portefølje|investering
 postordre|virksomhed
 postnummer|områder
 presse|møde
+procedure|beskrivelse
 procent|satsen
 proces|trin
 produkt|berøring|s|emballager
+produktion|s|borde
 produktion|s|køkken
 produktion|s|lokaler
+produktion|s|områder
 produktion|s|rapporter
 produkt|handel
 produktion|s|virksomhed
@@ -987,6 +1013,7 @@ tegning|s|regel
 salg|s|virksomhed
 salicylat|forgiftning
 salg|s|coaching
+samhandel|s|lande
 samtale|regler
 samtidighedsferie|dage
 samtid|s|litteraturen
@@ -1016,7 +1043,10 @@ sikkerhed|s|nettet
 sikkerhed|s|rådgivere
 sikkerhed|s|udvalget
 sikring|s|ordninger
+skadedyr|s|bekæmpelse
 skadedyr|s|bekæmpelse|s|rapport
+skadedyr|s|firma
+skadedyr|s|sikring
 skadedyr|s|sikring|s|gennemgang
 skade|s|forsikring
 skade|s|forsikring|s|virksomhed
@@ -1071,6 +1101,7 @@ spildevand|s|forsyningen
 spildevand|s|forsyning|s|aktivitet
 spildevand|s|forsyning|s|virksomhed
 sporbarhed|s|dokumentation
+sporbarhed|s|kontrol
 sporbarhed|s|kontrol|kampagnen
 sport|s|rekvisitter
 sport|s|events
@@ -1082,6 +1113,7 @@ standard|vedtægt
 stat|s|institutioner
 stemme|forklaring
 stemme|forklaringer
+stikprøve|kontrol
 stillads|arbejde
 stillads|materiel
 stillads|montage
@@ -1102,6 +1134,7 @@ stål|varer
 sundhed|s|produkter
 svømme|hal
 sygehus|apoteker
+symptom|ophør
 syre|base|forstyrrelser
 sø|forsikring
 sømand|s|mission
@@ -1142,6 +1175,7 @@ tilbagetrækning|s|procedurer
 tilbagetrækning|s|vejledning
 tilskud|s|bestemmelserne
 tilsætning|s|soft|kriterierne
+tilvirkning|s|område
 trafik|områder
 trafik|sikkerhed
 translatør|virksomhed
@@ -1206,6 +1240,7 @@ valuta|termin|s|forretninger
 vand|forsyning|s|aktivitet
 vand|forsyning|s|virksomhed
 vandmærke|papir
+vandmærke|papir|numre
 vand|sektor|lovens
 vare|modtagelse
 vare|modtagelse|s|dokumentation
@@ -1223,6 +1258,7 @@ vedligeholdelse|s|behandling
 vedligeholdelse|s|forbedringer
 vedligeholdelse|s|gennemgang
 vedligeholdelse|s|muligheder
+vedligeholdelse|s|plan
 vedligeholdelse|s|planlæggeren
 vedligeholdelse|s|standarden
 vedligeholdelse|s|vurdering
