@@ -156,7 +156,7 @@ class EParole(object):
         filename_within_zip : str, optional
             Filename of the file within the zip-file. By default the first
             file will be extracted.
-        Filename : str, optional.
+        filename : str, optional.
             Name of file to write.
 
         """
