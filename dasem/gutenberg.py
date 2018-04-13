@@ -272,7 +272,7 @@ class Gutenberg(Corpus):
 
         Parameters
         ----------
-        test : str
+        text : str
             Input text to be translated.
 
         Returns
