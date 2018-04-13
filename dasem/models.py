@@ -39,7 +39,8 @@ class Doc2Vec(with_metaclass(ABCMeta)):
     """Gensim Doc2vec for a corpus."""
 
     def __init__(self, autosetup=True):
-        """Setup model.
+        """Set up model.
+
         Parameters
         ----------
         autosetup : bool, optional
@@ -104,7 +105,9 @@ class Doc2Vec(with_metaclass(ABCMeta)):
 
     def save(self, filename=DOC2VEC_FILENAME):
         """Save model to pickle file.
+
         The Gensim load file is used which can also compress the file.
+
         Parameters
         ----------
         filename : str, optional
@@ -121,6 +124,7 @@ class Doc2Vec(with_metaclass(ABCMeta)):
         ----------
         size : int, optional
             Dimension of the word2vec space.
+
         """
         tagged_documents = self.iterable_tagged_documents()
         self.model = gensim.models.Doc2Vec(
@@ -167,7 +171,7 @@ class Doc2Vec(with_metaclass(ABCMeta)):
         negative : list of str
             List of strings with words to discount.
         topn : int
-            Number of words to return. 
+            Number of words to return.
         restrict_vocab : int, optional
             The maximum size of the vocabulary. This is forwarded to the Gensim
             `restrict_vocab` parameter.
@@ -211,7 +215,7 @@ class FastText(object):
     """FastText abstract class."""
 
     def __init__(self, autosetup=True):
-        """Setup logger."""
+        """Set up logger."""
         self.logger = logging.getLogger(__name__ + '.FastText')
         self.logger.addHandler(logging.NullHandler())
 
@@ -406,7 +410,7 @@ class Word2Vec(object):
     """
 
     def __init__(self, autosetup=True):
-        """Setup model."""
+        """Set up model."""
         self.logger = logging.getLogger(__name__ + '.Word2Vec')
         self.logger.addHandler(logging.NullHandler())
 
