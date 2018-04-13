@@ -90,10 +90,12 @@ class Doc2Vec(with_metaclass(ABCMeta)):
         """Load model from pickle file.
 
         This function is unsafe. Do not load unsafe files.
+
         Parameters
         ----------
         filename : str
             Filename of pickle file.
+
         """
         full_filename = self.full_filename(filename)
         self.logger.info('Loading doc2vec model from {}'.format(
@@ -107,6 +109,7 @@ class Doc2Vec(with_metaclass(ABCMeta)):
         ----------
         filename : str, optional
             Filename.
+
         """
         full_filename = self.full_filename(filename)
         self.model.save(full_filename)
@@ -164,7 +167,11 @@ class Doc2Vec(with_metaclass(ABCMeta)):
         negative : list of str
             List of strings with words to discount.
         topn : int
-            Number of words to return
+            Number of words to return. 
+        restrict_vocab : int, optional
+            The maximum size of the vocabulary. This is forwarded to the Gensim
+            `restrict_vocab` parameter.
+
         Returns
         -------
         words : list of tuples
@@ -255,6 +262,8 @@ class FastText(object):
         ----------
         filename : str
             Filename of pickle file.
+        model_type : skipgram, cbow, optional
+            Type of fastText model [default: skipgram].
 
         """
         if filename is None:
@@ -290,6 +299,8 @@ class FastText(object):
         ----------
         word : str
             Word to compare to trained model.
+        top_n : int, optional
+            Number of words to return [default: 10].
 
         Returns
         -------
@@ -387,11 +398,9 @@ class Word2Vec(object):
     ----------
     autosetup : bool, optional
         Determines whether the Word2Vec model should be autoloaded.
-    logging_level : logging.ERROR or other, default logging.WARN
-        Logging level.
 
-    Description
-    -----------
+    Notes
+    -----
     Trained models can be saved and loaded via the `save` and `load` methods.
 
     """
@@ -548,6 +557,9 @@ class Word2Vec(object):
             List of strings with words to discount.
         top_n : int
             Number of words to return
+        restrict_vocab : int, optional
+            The maximum size of the vocabulary. This is forwarded to the Gensim
+            `restrict_vocab` parameter.
 
         Returns
         -------
