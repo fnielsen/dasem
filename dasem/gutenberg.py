@@ -109,8 +109,8 @@ def extract_text(text):
     extracted_text : str
         Extracted body.
 
-    Description
-    -----------
+    Notes
+    -----
     This function attempts to extract the body of the the returned text.
     The full text contains license information and some header information.
 
@@ -525,8 +525,8 @@ class Word2Vec(models.Word2Vec):
     logging_level : logging.ERROR or other, default logging.WARN
         Logging level.
 
-    Description
-    -----------
+    Notes
+    -----
     Trained models can be saved and loaded via the `save` and `load` methods.
 
     """
