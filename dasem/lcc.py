@@ -91,7 +91,7 @@ class LCCFile(object):
     """
 
     def __init__(self, filename):
-        """Setup filename."""
+        """Set up filename."""
         self.filename = filename
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
@@ -168,7 +168,7 @@ class LCC(Corpus):
     """
 
     def __init__(self):
-        """Setup logger."""
+        """Set up logger."""
         self.logger = logging.getLogger(__name__ + '.LCC')
         self.logger.addHandler(logging.NullHandler())
 
@@ -277,7 +277,7 @@ class SentenceWordsIterable(object):
     """
 
     def __init__(self, lower=True, stem=False):
-        """Setup options."""
+        """Set up options."""
         self.lower = lower
         self.stem = stem
 

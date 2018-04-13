@@ -37,7 +37,7 @@ class Matrix(object):
     """Matrix."""
 
     def __init__(self, matrix, rows=None, columns=None):
-        """Setup matrix values and row and column annotation.
+        """Set up matrix values and row and column annotation.
 
         Parameters
         ----------

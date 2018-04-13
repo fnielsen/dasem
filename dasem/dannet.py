@@ -536,7 +536,7 @@ class TaggedDocumentsIterable(object):
     """
 
     def __init__(self, lower=True, stem=False):
-        """Setup options."""
+        """Set up options."""
         self.lower = lower
         self.stem = stem
 
@@ -579,6 +579,7 @@ class FastText(DataDirectoryMixin, models.FastText):
     directory.
 
     """
+
     pass
 
 

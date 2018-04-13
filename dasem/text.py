@@ -17,7 +17,7 @@ class Decompounder(object):
     """Word decompunder."""
 
     def __init__(self):
-        """Setup map."""
+        """Set up map."""
         self.word_tokenizer = WordPunctTokenizer()
 
         filename = join(split(__file__)[0], 'data', 'compounds.txt')

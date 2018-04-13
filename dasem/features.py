@@ -39,7 +39,7 @@ class FeatureExtractor(BaseEstimator):
     """Feature extractor for Danish texts."""
 
     def __init__(self):
-        """Setup text processors."""
+        """Set up text processors."""
         self.afinn = Afinn(language='da')
         self.word_tokenizer = WordPunctTokenizer()
 
@@ -61,7 +61,7 @@ class FeatureExtractor(BaseEstimator):
 
     @property
     def features_(self):
-        """Setup features."""
+        """Set up features."""
         features = [
             'n_characters',
             'n_words',

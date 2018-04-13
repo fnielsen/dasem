@@ -15,7 +15,7 @@ class Corpus(with_metaclass(ABCMeta)):
     """Abstract class for corpus."""
 
     def __init__(self):
-        """Setup tokenizer."""
+        """Set up tokenizer."""
         self.logger = logging.getLogger(__name__ + '.Corpus')
         self.logger.addHandler(logging.NullHandler())
 

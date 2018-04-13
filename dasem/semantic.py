@@ -41,7 +41,7 @@ class Semantic(object):
     def __init__(
             self, stop_words=None, norm='l2', use_idf=True,
             sublinear_tf=False, max_n_pages=None):
-        """Setup model.
+        """Set up model.
 
         Several of the parameters are piped further on to sklearns
         TfidfVectorizer.
@@ -63,7 +63,7 @@ class Semantic(object):
     def setup_wikipedia_semantics(
             self, stop_words=None, norm='l2', use_idf=True, sublinear_tf=False,
             max_n_pages=None):
-        """Setup wikipedia semantic model."""
+        """Set up wikipedia semantic model."""
         self._dump_file = XmlDumpFile()
 
         self._wikipedia_titles = [

@@ -321,14 +321,14 @@ class XmlDumpFile(object):
                 yield event, element
 
     def iter_page_elements(self, events=('end',)):
-        """Iterator for page XML elements."""
+        """Iterate over page XML elements."""
         for event, element in self.iter_elements(events=events):
             tag = self.clean_tag(element.tag)
             if tag == 'page':
                 yield event, element
 
     def iter_pages(self):
-        """Iterator for page yielding a dictionary.
+        """Iterate over pages yielding a dictionary.
 
         Yields
         ------
@@ -650,7 +650,7 @@ class ExplicitSemanticAnalysis(object):
     def __init__(
             self, autosetup=True, stop_words=None, norm='l2', use_idf=True,
             sublinear_tf=False, max_n_pages=None, display=False):
-        """Setup model.
+        """Set up model.
 
         Several of the parameters are piped further on to sklearns
         TfidfVectorizer.
@@ -747,7 +747,7 @@ class ExplicitSemanticAnalysis(object):
     def setup(
             self, stop_words=None, norm='l2', use_idf=True, sublinear_tf=False,
             max_n_pages=None, display=False):
-        """Setup wikipedia semantic model.
+        """Set up wikipedia semantic model.
 
         Returns
         -------
@@ -859,7 +859,7 @@ class SentenceWordsIterable(object):
     """
 
     def __init__(self, lower=True, stem=False, max_n_pages=None):
-        """Setup options."""
+        """Set up options."""
         self.lower = lower
         self.max_n_pages = max_n_pages
         self.stem = stem

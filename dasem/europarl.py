@@ -76,7 +76,7 @@ class Europarl(Corpus):
 
     def __init__(self, danish_filename=DANISH_FILENAME,
                  tar_gz_filename=TGZ_PARALLEL_CORPUS_FILENAME):
-        """Setup filename.
+        """Set up filename.
 
         Parameters
         ----------

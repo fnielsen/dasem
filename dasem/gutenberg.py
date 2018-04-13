@@ -216,7 +216,7 @@ class Gutenberg(Corpus):
     """
 
     def __init__(self):
-        """Setup data directory and other attributes."""
+        """Set up data directory and other attributes."""
         self.logger = logging.getLogger('dasem.gutenberg.Gutenberg')
         self.logger.addHandler(logging.NullHandler())
 
@@ -499,7 +499,7 @@ class SentenceWordsIterable():
 
     def __init__(self, translate_aa=True, translate_whitespaces=True,
                  lower=True, stem=False):
-        """Setup options."""
+        """Set up options."""
         self.translate_aa = translate_aa
         self.translate_whitespaces = translate_whitespaces
         self.lower = lower
@@ -532,7 +532,7 @@ class Word2Vec(models.Word2Vec):
     """
 
     def __init__(self, autosetup=True, logging_level=logging.WARN):
-        """Setup model."""
+        """Set up model."""
         self.logger = logging.getLogger(__name__ + '.Word2Vec')
         self.logger.addHandler(logging.NullHandler())
 

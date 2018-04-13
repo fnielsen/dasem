@@ -117,7 +117,7 @@ class Fullmonty(Corpus):
     """
 
     def __init__(self):
-        """Setup objects for logger and corpora."""
+        """Set up objects for logger and corpora."""
         super(self.__class__, self).__init__()
 
         self.logger = logging.getLogger(__name__ + '.Fullmonty')
@@ -169,7 +169,7 @@ class SentenceWordsIterable(object):
     """
 
     def __init__(self, lower=True, stem=False):
-        """Setup options."""
+        """Set up options."""
         self.lower = lower
         self.stem = stem
 
@@ -214,14 +214,31 @@ class FastText(models.FastText):
 
 
 class TokenizedSentences(DataDirectoryMixin):
+    """Interface to tokenized sentences."""
 
     def __init__(self, filename=TOKENIZED_SENTENCES_FILENAME):
+        """Initialize logger and filename.
+
+        Parameters
+        ----------
+        filename : str
+            filename with tokenized sentences.
+
+        """
         self.logger = logging.getLogger(__name__ + '.TokenizedSentences')
         self.logger.addHandler(logging.NullHandler())
 
         self.filename = self.full_filename(filename)
 
     def count_words(self):
+        """Count words.
+
+        Returns
+        -------
+        word_counts : dict
+            Counts for individual words in a dictionary.
+
+        """
         words = []
         with codecs.open(self.filename, encoding='utf-8') as fid:
             for line in fid:
@@ -292,10 +309,10 @@ class WordCounts(DataDirectoryMixin):
     """
 
     def __init__(self, filename=WORD_COUNTS_FILENAME):
-        """Setup counts."""
+        """Set up counts."""
         self.filename = self.full_filename(filename)
 
-        # Setup counts
+        # Set up counts
         try:
             self.load_counts()
         except IOError:
@@ -319,6 +336,7 @@ class WordCounts(DataDirectoryMixin):
                 fid.write(u('{} {}\n').format(count, word))
 
     def setup_count_sum(self):
+        """Sum the word counts."""
         self._count_sum = sum(self._word_counts.values())
 
     def setup_counts_from_tokenized_sentences(self):

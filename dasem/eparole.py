@@ -49,7 +49,7 @@ class EParole(object):
     """Interface to ePAROLE dataset from DSL."""
 
     def __init__(self, password=None):
-        """Setup variables.
+        """Set up variables.
 
         Parameters
         ----------
@@ -68,7 +68,7 @@ class EParole(object):
         self.setup(password=password)
 
     def setup(self, password=None):
-        """Setup data directory and data file.
+        """Set up data directory and data file.
 
         Parameters
         ----------
