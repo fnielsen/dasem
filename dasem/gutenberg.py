@@ -22,14 +22,31 @@ Options:
 Description:
   This is an interface to Danish texts on Gutenberg.
 
+  For the module to work, the Gutenberg corpus must be downloaded. This can be
+  done from the commandline with
+
+    $ python -m dasem.gutenberg download
+
+  For training and saving a model from the commandline:
+
+    $ python -m dasem.gutenberg train-and-save-word2vec
+
+  If this process is successful you can then use the `most-similar` command:
+
+    $ python -m dasem.gutenberg most-similar kvinde
+
+  and the program should print: mand, dame, profet, ...
+
   There is restriction on how the data should be downloaded from Gutenberg.
   This is stated on their homepage. Download of all the Danish language text
-  must be done in the below way.
+  must be done in the below way:
 
   wget -w 2 -m -H \
     "http://www.gutenberg.org/robot/harvest?filetypes[]=txt&langs[]=da"
 
   The default directory for the data is: `~/dasem_data/gutenberg/`.
+
+  This part is implemented in when you apply the `download` command.
 
   Danish works in Project Gutenberg are to some extent indexed on Wikidata. The
   works can be queried with:
@@ -80,6 +97,7 @@ import requests
 from . import models
 from .config import data_directory
 from .corpus import Corpus
+from .utils import make_data_directory
 from .wikidata import query_to_dataframe
 
 
@@ -191,7 +209,7 @@ class Gutenberg(Corpus):
 
     The data will be mirrored/downloaded to a directory like:
 
-        ~/dasem_data/gutenberg/www.gutenberg.lib.md.us
+        ~/dasem_data/gutenberg/aleph.gutenberg.org
 
     In regard to encoding of the Project Gutenberg texts: For instance,
     10218 is encoded in "ISO Latin-1". This is stated with the line
@@ -221,13 +239,25 @@ class Gutenberg(Corpus):
         self.logger.addHandler(logging.NullHandler())
 
         self.data_directory = join(data_directory(), 'gutenberg',
-                                   'www.gutenberg.lib.md.us')
+                                   'aleph.gutenberg.org')
         self.sentence_tokenizer = nltk.data.load(
             'tokenizers/punkt/danish.pickle')
         self.whitespaces_pattern = re.compile(
             '\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
+
+    def data_directory(self):
+        """Return diretory where data should be.
+
+        Returns
+        -------
+        dir : str
+            Directory.
+
+        """
+        dir = join(data_directory(), 'gutenberg')
+        return dir
 
     def download(self, redownload=False):
         r"""Download corpus from Gutenberg homepage.
@@ -254,6 +284,8 @@ class Gutenberg(Corpus):
         https://www.gutenberg.org/wiki/Gutenberg%3aInformation_About_Robot_Access_to_our_Pages
 
         """
+        self.make_data_directory()
+
         test_filename = join(self.data_directory, '1', '0', '2', '1', '10218',
                              '10218-8.zip')
         if not redownload and isfile(test_filename):
@@ -266,6 +298,10 @@ class Gutenberg(Corpus):
             directory))
         call(['wget', '-w', '2', '-m', '-H', DOWNLOAD_URL], cwd=directory)
         self.logger.debug('Gutenberg corpus downloaded')
+
+    def make_data_directory(self):
+        """Make data directory for LCC."""
+        make_data_directory(data_directory(), 'gutenberg')
 
     def translate_aa(self, text):
         """Translate double-a to 'bolle-aa'.
