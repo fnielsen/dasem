@@ -37,6 +37,8 @@ afhold|s|mand
 afklaring|s|forløb
 afskrivning|s|berettiget
 afstemning|s|områder
+afståelse|s|tidspunkt
+afståelse|s|tidspunktet
 agentur|forretning
 agentur|virksomhed
 agent|virksomhed
@@ -181,6 +183,8 @@ bestilling|s|kørsel
 bestyrelse|s|uddannelser
 betaling|s|formidling
 betaling|s|forpligtelsen
+betaling|s|regel
+betaling|s|regler
 betragtning|s|grundene
 bevidsthed|s|forstyrrelser
 bevidsthed|s|niveau
@@ -312,6 +316,8 @@ ejendom|s|vedligeholdelse
 ejendom|s|virksomhed
 ejendomsmægler|virksomhed
 ejendom|s|udlejning
+ejer|andel
+ejer|andele
 ejer|interesser
 ejer|rettigheder
 ejer|besiddelser
@@ -438,6 +444,10 @@ forskning|s|værktøjer
 forskrift|s|proceduren
 forsyning|s|aktiviteter
 forsyning|s|sikkerhed
+forsyning|s|virksomhed
+forsyning|s|virksomheden
+forsyning|s|virksomheder
+forsyning|s|virksomhederne
 forsvar|s|kapacitet
 fortolkning|s|muligheder
 fortrydelse|s|ordning
@@ -539,7 +549,15 @@ ikke|fradrag|s|berettiget
 ikrafttrædelse|s|bestemmelse
 import|handel
 import|virksomhed
+indberetning|s|myndighed
+indberetning|s|myndigheden
+indberetning|s|myndigheder
+indberetning|s|myndighederne
 indberetning|s|perioder
+indberetning|s|pligt
+indberetning|s|pligten
+indberetning|s|år
+indberetning|s|året
 indbetaling|s|pligtige
 indgang|s|partiet
 indkomst|begrænsninger 
@@ -569,6 +587,7 @@ intranet|applikationer
 instrumentering|s|opgaver
 investering|s|foreninger
 investering|s|forretning
+investering|s|forvaltning
 investering|s|muligheder
 investering|s|ordninger
 investering|s|regler
@@ -1003,6 +1022,10 @@ risiko|analyse
 risiko|spredning
 rotation|s|cyklusser
 rutebus|kørsel
+rådighed|s|beløb
+rådighed|s|beløbet
+rådighed|s|dato
+rådighed|s|datoen
 rådgiver|virksomhed
 rådgivning|s|arbejde
 rådgivning|s|bistand
@@ -1096,8 +1119,10 @@ spedition|s|forretninger
 spedition|s|virksomhed
 speditør|virksomhed
 spids|kandidater
+spildevand|s|anlæg
 spildevand|s|forsyning
 spildevand|s|forsyningen
+spildevand|s|forsyninger
 spildevand|s|forsyning|s|aktivitet
 spildevand|s|forsyning|s|virksomhed
 sporbarhed|s|dokumentation
@@ -1176,6 +1201,8 @@ tilbagetrækning|s|vejledning
 tilskud|s|bestemmelserne
 tilsætning|s|soft|kriterierne
 tilvirkning|s|område
+total|omkostning
+total|omkostninger
 trafik|områder
 trafik|sikkerhed
 translatør|virksomhed
@@ -1237,10 +1264,14 @@ valg|muligheder
 valuta|arbitrage
 valuta|forretning
 valuta|termin|s|forretninger
+vand|forsyning
 vand|forsyning|s|aktivitet
 vand|forsyning|s|virksomhed
 vandmærke|papir
 vandmærke|papir|numre
+vand|sektor
+vand|sektoren
+vand|sektorens
 vand|sektor|lovens
 vare|modtagelse
 vare|modtagelse|s|dokumentation
