@@ -4,6 +4,7 @@ Usage:
   dasem.retsinformationdk download [options]
   dasem.retsinformationdk get-all-sentences [options]
   dasem.retsinformationdk get-all-texts [options]
+  dasem.retsinformationdk save-gigaword [options]
 
 Options:
   --debug             Debug messages.
@@ -18,6 +19,12 @@ Notes
 The `wget' program is required to download the pages from retsinformation.dk.
 
 """
+
+import codecs
+
+from datetime import datetime
+
+import json
 
 import logging
 
@@ -37,10 +44,19 @@ import nltk
 
 from lxml import etree
 
+import pytz
+
 from . import utils
 
 
 DOWNLOAD_URL = "https://www.retsinformation.dk"
+
+PUBLICATION_DATE_PATTERN = re.compile(
+    u(r"Offentligg\u00f8relsesdato: (\d{1,2})-(\d{1,2})-(\d{4})<"),
+    flags=re.UNICODE)
+
+# For instance, R0710.aspx?id=10003
+HTML_FILE_IDENTIFIER_PATTERN = re.compile(r"R0710\.aspx\?id\=(\d+)")
 
 
 def data_directory():
@@ -107,13 +123,16 @@ def download(redownload=False):
     logger.debug('Retsinformation.dk corpus downloaded')
 
 
-def iter_htmls(return_filename=False):
+def iter_htmls(return_filename=False, return_url=False):
     """Yield HTML strings from retsinformation.dk.
 
     Parameters
     ----------
     return_filename : bool, optional
         Determine whether the output should include the filename of the read
+        file.
+    return_url : bool, optional
+        Determine whether the output should include the URL of the read
         file.
 
     Yields
@@ -122,6 +141,8 @@ def iter_htmls(return_filename=False):
         String with HTML.
     filename : string
         Filename. Only returned if the `return_filename` is True.
+    url : string
+        Reconstructed URL. Only returned if the `return_url` is True.
 
     Notes
     -----
@@ -134,11 +155,18 @@ def iter_htmls(return_filename=False):
     for filename in filenames:
         if "?id=" in filename and "&rg=" not in filename:
             full_filename = join(directory, filename)
+            url = "https://www.retsinformation.dk/Forms/" + filename
             html = open(full_filename).read()
             if return_filename:
-                yield html, filename
+                if return_url:
+                    yield html, filename, url
+                else:
+                    yield html, filename
             else:
-                yield html
+                if return_url:
+                    yield html, url
+                else:
+                    yield html
 
 
 def iter_sentences():
@@ -252,6 +280,92 @@ def make_data_directory():
     utils.make_data_directory(data_directory())
 
 
+def save_gigaword(directory=None):
+    """Extract text and save to files in the gigaword format.
+
+    Extract the text from the HTML downloaded from the retsinformation.dk
+    website and save the text in the gigaword format together with a
+    metadata file.
+
+    Parameters
+    ----------
+    directory : str or None
+        Directory where ther Gigaword data is stored.
+
+    """
+    logger = logging.getLogger(__name__)
+
+    json_filename = "retsinformationdk.jsonl"
+
+    bodytext_xpath = "//div[@id='ctl00_MainContent_Broedtekst1']"
+
+    if directory is None:
+        directory = join(data_directory(), "retsinformationdk")
+        utils.make_data_directory(directory)
+
+    json_full_filename = join(directory, json_filename)
+
+    timezone = pytz.FixedOffset(60)
+
+    with open(json_full_filename, 'w') as json_fid:
+        for file_index, (html, filename, url) in enumerate(
+                iter_htmls(return_filename=True,
+                           return_url=True)):
+            tree = etree.HTML(html)
+            bodytext_elements = tree.xpath(bodytext_xpath)
+
+            # There are apparently some (or at least one) webpages that
+            # follows a URL pattern for content pages but where the page
+            # is a list page. For instance,
+            # https://www.retsinformation.dk/Forms/R0910.aspx?id=208123
+            if len(bodytext_elements) == 1:
+                text = " ".join(bodytext_elements[0].itertext())
+            else:
+                logger.warn('Something is unusual with the file: {}'.format(
+                    filename))
+
+            # Publication date extraction
+            matches = PUBLICATION_DATE_PATTERN.findall(html)
+            if len(matches) == 1 and len(matches[0]) == 3:
+                date_published = datetime(
+                    int(matches[0][2]),
+                    int(matches[0][1]),
+                    int(matches[0][0]), tzinfo=timezone).strftime("%c %z")
+            else:
+                logger.error("Date could not be extracted: {}".format(
+                    filename))
+
+            text = text.strip()
+            text = "\n".join(line.strip() for line in text.split('\n'))
+            text = re.sub(r"\n\n(?:(\n)\n*)?", r"\n\1", text, flags=re.DOTALL)
+
+            # Document identifier extraction
+            matches = HTML_FILE_IDENTIFIER_PATTERN.findall(filename)
+            if len(matches) == 1:
+                doc_id = "retsinformationdk_" + matches[0]
+            else:
+                logger.error(
+                    "Document identifer could not be extracted: {}".format(
+                        filename))
+
+            # Write line in metadata file
+            metadata = {
+                'uri': url,
+                'doc_id': doc_id,
+                'date_published': date_published,
+                'date_built': datetime.now(timezone).strftime("%c %z"),
+            }
+            json_fid.write(json.dumps(metadata) + "\n")
+
+            # Write text file
+            text_filename = join(directory, doc_id)
+            with codecs.open(text_filename, "w", encoding="utf-8") as text_fid:
+                text_fid.write(text)
+
+            logger.info("Processed {} [{}]".format(
+                filename, file_index))
+
+
 def main():
     """Handle command-line interface."""
     from docopt import docopt
@@ -301,6 +415,9 @@ def main():
             write(output_file,
                   text.encode(output_encoding) +
                   separator.encode(output_encoding))
+
+    elif arguments['save-gigaword']:
+        save_gigaword()
 
 
 if __name__ == '__main__':
