@@ -149,7 +149,19 @@ def extract_text(text):
     "End of the Project Gutenberg EBook of ..."
 
     This postamble seems not always to be present. It might be split over the
-    two last sentences.
+    two last sentences. This is also stripped
+
+    There may also be the producer's preamble, e.g.,
+
+    "Produced by ..."
+
+    This is also removed.
+
+    The preamble may also contain the remarks of the transcriber, e.g.,
+
+    "Afskriverens bem..."
+
+    This is removed as well as a variation with "[ Afskriverens bem..."
 
     """
     # TODO: There is still some text to be dealt with.
@@ -159,6 +171,20 @@ def extract_text(text):
          r"^\*\*\* ?END OF TH.+?$"),
         text, flags=re.DOTALL | re.MULTILINE | re.UNICODE)
     body = matches[0].strip()
+
+    # Remove from "End of the Project Gutenberg EBook of ..." to the end
+    body = re.sub(r"^End of the Project Gutenberg EBook.*", "", body,
+                  flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+
+    # Remove producer's preamble
+    body = re.sub(r"^Produced by.*?\n(\r?\n)+", "", body,
+                  flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+
+    # Remove transcriber's remarks
+    body = re.sub(
+        u(r"^(?:\[ )?Afskriverens bem\u00E6rkninger.*?\n(\r?\n){2,}"),
+        "", body, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+
     return body
 
 
@@ -243,7 +269,7 @@ class Gutenberg(Corpus):
         self.sentence_tokenizer = nltk.data.load(
             'tokenizers/punkt/danish.pickle')
         self.whitespaces_pattern = re.compile(
-            '\s+', flags=re.DOTALL | re.UNICODE)
+            r'\s+', flags=re.DOTALL | re.UNICODE)
         self.word_tokenizer = WordPunctTokenizer()
         self.stemmer = DanishStemmer()
 
@@ -388,13 +414,16 @@ class Gutenberg(Corpus):
         # Example on subdirectory structure:
         # www.gutenberg.lib.md.us/4/4/9/6/44967
         s = str(id)
-        l = list(s)
-        if len(l) > 4:
-            directory = join(self.data_directory, l[0], l[1], l[2], l[3], s)
+        elements = list(s)
+        if len(elements) > 4:
+            directory = join(self.data_directory,
+                             elements[0], elements[1],
+                             elements[2], elements[3], s)
         else:
             # For instance, id=9264 has only four-level subdirectories.
             # This might be because it is only 4 characters long
-            directory = join(self.data_directory, l[0], l[1], l[2], s)
+            directory = join(self.data_directory,
+                             elements[0], elements[1], elements[2], s)
 
         zip_filename = join(directory, s + '-8.zip')
         self.logger.debug('Reading text from {}'.format(zip_filename))
@@ -577,8 +606,9 @@ class Word2Vec(models.Word2Vec):
             self.logger.info('Autosetup')
             try:
                 self.load()
-            except:
-                self.logger.info('Loading word2vec model failed')
+            except Exception as err:
+                self.logger.info(
+                    'Loading word2vec model failed: {}'.format(err))
                 self.train()
                 self.save()
 
