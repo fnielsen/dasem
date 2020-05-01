@@ -11,5 +11,6 @@ lxml
 mwparserfromhell
 nltk
 numpy>=1.7.0
+pytz
 scikit-learn
 
