@@ -33,7 +33,7 @@ hus,beboelse,lejlighed,mulighed
 chance,mulighed,lejlighed,beboelse
 ege,bøge,pile,knive
 spyd,knive,pile,bøge
-lægemiddel,tabletter,piller,afskaller
+lægemidler,tabletter,piller,afskaller
 splitter,afskaller,piller,tabletter
 oprindelse,ophav,kilde,krible
 klø,krible,kilde,ophav
@@ -63,3 +63,9 @@ motivere,hjælpe,fremme,hjemme
 ude,hjemme,fremme,hjælpe
 hejst,båret,løftet,aftalen
 garantien,aftalen,løftet,båret
+plaffede,pløkkede,skød,barm
+favn,barm,skød,pløkkede
+gård,stald,lade,afsikre
+skyde,afsikre,lade,stald
+stald,lade,lo,grinede
+smilede,grinede,lo,lade
