@@ -69,3 +69,9 @@ gård,stald,lade,afsikre
 skyde,afsikre,lade,stald
 stald,lade,lo,grinede
 smilede,grinede,lo,lade
+lille,lav,kort,brev
+seddel,brev,kort,lille
+anlæg,park,have,eje
+besidde,eje,have,park
+tyst,rolig,stille,anbringe
+sætte,anbringe,stille,rolig
