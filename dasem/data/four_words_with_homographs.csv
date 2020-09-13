@@ -75,6 +75,8 @@ anlæg,park,have,eje
 besidde,eje,have,park
 tyst,rolig,stille,anbringe
 sætte,anbringe,stille,rolig
+syd,øst,vest,bluse
+bluse,trøje,vest,øst
 glide,svæve,dale,kløfter
 slugter,kløfter,dale,svæve
 enhver,samtlige,alle,avenue
@@ -83,3 +85,8 @@ retninger,baner,kurser,fag
 seminarer,fag,kurser,retninger
 stakkels,ynkværdige,arme,hær
 værn,hær,arme,stakkels
+aktiverer,starter,tænder,gebis
+gebis,gummer,tænder,starter
+nedenfor,over,under,mirakel
+eventyrlighed,mirakel,under,over
+
