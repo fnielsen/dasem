@@ -9,6 +9,7 @@ Usage:
   dasem.dannet get-all-tokenized-sentences [options]
   dasem.dannet show-glossary <word> [options]
   dasem.dannet fasttext-most-similar [options] <word>
+  dasem.dannet save-gigaword [options]
   dasem.dannet show [options] <dataset>
   dasem.dannet train-and-save-doc2vec [options]
   dasem.dannet train-and-save-fasttext [options]
@@ -49,7 +50,11 @@ References:
 
 from __future__ import absolute_import, division, print_function
 
+import codecs
+
 import csv
+
+from datetime import datetime
 
 import json
 
@@ -79,7 +84,8 @@ from nltk.stem.snowball import DanishStemmer
 from nltk.tokenize import WordPunctTokenizer
 
 from pandas import read_csv, DataFrame
-from pandas.io.common import CParserError
+
+import pytz
 
 import requests
 
@@ -97,7 +103,8 @@ DANNET_FILENAME = 'DanNet-2.2_csv.zip'
 
 DANNET_SQLITE_FILENAME = splitext(DANNET_FILENAME)[0] + '.db'
 
-DANNET_CSV_ZIP_URL = 'http://www.wordnet.dk/DanNet-2.2_csv.zip'
+DANNET_CSV_ZIP_URL = ('https://repository.clarin.dk/repository/xmlui/'
+                      'bitstream/handle/20.500.12115/24/DanNet-2.2_csv.zip')
 
 
 class DataDirectoryMixin(object):
@@ -358,7 +365,8 @@ class Dannet(Corpus, DataDirectoryMixin):
         try:
             df = read_csv(zip_file.open(full_filename),
                           sep='@', encoding='latin_1', header=None)
-        except CParserError:
+        except:
+            # It is not yet determined what kind of exception is raised.
             self.logger.debug('Reading of csv with Pandas failed')
             # Bad csv file with unquoted "@" in line 19458 and 45686
             # in synsets.csv
@@ -583,6 +591,55 @@ class FastText(DataDirectoryMixin, models.FastText):
     pass
 
 
+def save_gigaword(directory=None):
+    """Extract text and save to files in the gigaword format.
+
+    Extract the usage examples from the glosses of DanNet and save the text in
+    the gigaword format together with a metadata file.
+
+    Parameters
+    ----------
+    directory : str or None
+        Directory where ther Gigaword data is stored. Default is a directory
+        called "dannet".
+
+    """
+    logger = logging.getLogger(__name__)
+
+    json_filename = "dannet.jsonl"
+
+    if directory is None:
+        directory = "dannet"
+        make_data_directory(directory)
+
+    json_full_filename = join(directory, json_filename)
+
+    timezone = pytz.FixedOffset(0)
+
+    dannet = Dannet()
+
+    with open(json_full_filename, 'w') as json_fid:
+        for file_index, sentence in enumerate(dannet.iter_sentences()):
+
+            doc_id = 'dannet_' + str(file_index)
+
+            # Write line in metadata file
+            metadata = {
+                'doc_id': doc_id,
+                'uri': DANNET_CSV_ZIP_URL,
+                'date_built': datetime.now(timezone).strftime("%c %z"),
+            }
+            json_fid.write(json.dumps(metadata) + "\n")
+
+            # Write text file
+            text_filename = join(directory, doc_id)
+            with codecs.open(text_filename, "w", encoding="utf-8") as text_fid:
+                text_fid.write(sentence)
+
+            logger.info("Processed {} [{}]".format(
+                text_filename, file_index))
+
+
 def main():
     """Handle command-line input."""
     from docopt import docopt
@@ -687,6 +744,9 @@ def main():
         fast_text = FastText()
         for word, similarity in fast_text.most_similar(word):
             write(output_file, word.encode('utf-8') + b('\n'))
+
+    elif arguments['save-gigaword']:
+        save_gigaword()
 
     elif arguments['show-glossary']:
         word = arguments['<word>']
